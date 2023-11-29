@@ -1,0 +1,26 @@
+int nummesh  = 31;
+
+
+mesh th = readmesh("./mesh.msh");  plot(th);
+
+
+// We save the tecplot file
+int nbv = th.nv;
+int nbt = th.nt;
+{
+	ofstream file("./mesh.dat");
+        file << "TITLE = "<<"SQUARE_CYLINDER_RE_22000"<<endl;
+	file << "VARIABLES = \"X\" ,  \"Y\"  " << endl;
+        file << "ZONE"<<"   "<<"N="<<th.nv<<","<<"E="<<th.nt<<","<<"F=FEPOINT,ET=TRIANGLE"<<endl;
+
+	for (int i=0; i<nbv; i++){
+		real xt=th(i).x;
+		real yt=th(i).y;
+		file << xt << " " << yt << " "  << endl;
+	};
+
+	// Liste connectivite
+	for (int k=0; k<nbt; k++){
+		file << int(th[k][0])+1 << " " << int(th[k][1])+1 << " " << int(th[k][2])+1 << endl;
+	};
+};

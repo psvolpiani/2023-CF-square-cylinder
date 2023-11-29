@@ -1,0 +1,29 @@
+
+//                                                                            //
+// Gradient toolbox                                                           //
+//                                                                            //
+// Contents: - dJdnut = getdJdnut(flow[],adj[])                               //
+//                                                                            //
+// Meshes th, thr and space f22p, UrxUrxPr must be defined globally.          //
+//                                                                            //
+
+
+
+func int getdJdfx(real[int] &grad, real[int] &flow, real[int] &adj, real[int] &control){
+  // Unwrap direct and adjoint solutions
+  f2212 [u ,v ,p ,nut];    u[]  = flow;
+  f2212 [ua,va,pa,nuta];  ua[]  = adj;
+  f11 [ffx,ffy];   ffx[] = control;
+  f11 [dJx,dJy];
+  
+  {
+    ofstream fifi(fileoutput,append);
+    fifi << "GetdJdfx" << endl;
+  }
+  
+  [dJx,dJy] = [ - ua, - va];
+  
+  // Output
+  grad = dJx[];
+  return 0;
+}

@@ -1,0 +1,48 @@
+
+//                                                                            //
+// Gradient toolbox                                                           //
+//                                                                            //
+// Contents: - dJdnut = getdJdnut(flow[],adj[])                               //
+//                                                                            //
+// Meshes th, thr and space f22p, UrxUrxPr must be defined globally.          //
+//                                                                            //
+
+
+func int getdJdfx(real[int] &grad, real[int] &flow, real[int] &adj, real[int] &control){
+  // Unwrap direct and adjoint solutions
+  f2212 [u ,v ,p ,nut];    u[]  = flow;
+  f2212 [ua,va,pa,nuta];  ua[]  = adj;
+  f11 [ffx,ffy];   ffx[] = control;
+  f11 [dJx,dJy];
+  
+  {
+    ofstream fifi(fileoutput,append);
+    fifi << "GetdJdfx" << endl;
+  }
+  
+  matrix DDX1,DDY1,Mu1;
+  {
+    varf mass1(u,uh) = int2d(th,qforder=qfo)( u*uh );
+    varf DX1(u,uh)   = int2d(th,qforder=qfo)( dx(u)*uh );
+    varf DY1(u,uh)   = int2d(th,qforder=qfo)( dy(u)*uh );
+    DDX1 = DX1(f2,f1);
+    DDY1 = DY1(f2,f1);
+    Mu1  = mass1(f1,f1,solver=sparsesolver);
+  }
+  
+  f1 dyUa,dxVa,dxUa,dyVa;
+  {
+    f2 tempu11;
+    f1 tempu21;
+    tempu11 = ua;    tempu21[] = DDY1*tempu11[]; dyUa[]   = Mu1^-1*tempu21[];
+    tempu11 = ua;    tempu21[] = DDX1*tempu11[]; dxUa[]   = Mu1^-1*tempu21[];
+    tempu11 = va;    tempu21[] = DDY1*tempu11[]; dyVa[]   = Mu1^-1*tempu21[];
+    tempu11 = va;    tempu21[] = DDX1*tempu11[]; dxVa[]   = Mu1^-1*tempu21[];
+  }
+  
+  [dJx,dJy] = [ (dxUa-dyVa), (dyUa + dxVa)];
+  
+  // Output
+  grad = dJx[];
+  return 0;
+}

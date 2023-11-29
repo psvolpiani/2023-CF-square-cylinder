@@ -1,0 +1,89 @@
+New Iteration of the solver_J : 1
+
+Navier-Stokes
+iter=  1 , resl2=  1.39955e-09 , resinf=  6.40641e-10
+  Newton converged in 1 iterations
+GetJ
+ J = 1.24241
+New gradient
+Adjoint Navier-Stokes
+GetdJdfx
+New Iteration of the solver_J : 2
+
+Navier-Stokes
+iter=  1 , resl2=  0.000189553 , resinf=  9.54852e-06
+CFL=10
+iter=  2 , resl2=  0.431612 , resinf=  0.216928
+CFL=10
+iter=  3 , resl2=  1.39516 , resinf=  0.643954
+  Newton diverged
+New gradient
+Adjoint Navier-Stokes
+GetdJdfx
+New Iteration of the solver_J : 3
+
+Navier-Stokes
+iter=  1 , resl2=  3.92847e-05 , resinf=  1.97893e-06
+CFL=10
+iter=  2 , resl2=  0.001137 , resinf=  0.000239702
+CFL=10
+iter=  3 , resl2=  0.000455142 , resinf=  3.68123e-05
+CFL=10
+iter=  4 , resl2=  0.000514403 , resinf=  1.67275e-05
+CFL=10
+iter=  5 , resl2=  0.000569918 , resinf=  1.52732e-05
+CFL=10
+iter=  6 , resl2=  0.000596497 , resinf=  1.28931e-05
+CFL=10
+iter=  7 , resl2=  0.00059788 , resinf=  1.29158e-05
+CFL=10
+iter=  8 , resl2=  0.000582523 , resinf=  1.26428e-05
+CFL=10
+iter=  9 , resl2=  0.000560188 , resinf=  1.37376e-05
+CFL=10
+iter=  10 , resl2=  0.000537692 , resinf=  1.45111e-05
+CFL=10
+iter=  11 , resl2=  0.000516587 , resinf=  1.50461e-05
+CFL=10
+iter=  12 , resl2=  0.00049411 , resinf=  1.52033e-05
+CFL=10
+iter=  13 , resl2=  0.000466016 , resinf=  1.46974e-05
+CFL=10
+iter=  14 , resl2=  0.000429264 , resinf=  1.366e-05
+CFL=10
+iter=  15 , resl2=  0.000383138 , resinf=  1.2274e-05
+CFL=10
+iter=  16 , resl2=  0.00032939 , resinf=  1.09387e-05
+CFL=10
+iter=  17 , resl2=  0.000271596 , resinf=  1.02873e-05
+CFL=10
+iter=  18 , resl2=  0.000214208 , resinf=  9.4803e-06
+CFL=10
+iter=  19 , resl2=  0.000161545 , resinf=  7.96996e-06
+CFL=10
+iter=  20 , resl2=  0.000116952 , resinf=  6.10448e-06
+CFL=10
+iter=  21 , resl2=  8.24665e-05 , resinf=  4.2156e-06
+CFL=10
+iter=  22 , resl2=  5.8718e-05 , resinf=  2.5569e-06
+CFL=10
+iter=  23 , resl2=  4.47979e-05 , resinf=  1.27752e-06
+CFL=10
+iter=  24 , resl2=  3.8094e-05 , resinf=  7.68252e-07
+CFL=10.3126
+iter=  25 , resl2=  3.51589e-05 , resinf=  8.59847e-07
+CFL=11.1735
+iter=  26 , resl2=  3.35131e-05 , resinf=  9.12875e-07
+CFL=11.7222
+iter=  27 , resl2=  3.20162e-05 , resinf=  9.18108e-07
+CFL=12.2703
+iter=  28 , resl2=  3.00127e-05 , resinf=  8.73179e-07
+CFL=13.0894
+iter=  29 , resl2=  2.70922e-05 , resinf=  7.84257e-07
+CFL=14.5004
+iter=  30 , resl2=  2.30373e-05 , resinf=  6.73741e-07
+CFL=17.0526
+iter=  31 , resl2=  1.78963e-05 , resinf=  6.07816e-07
+CFL=21.9513
+iter=  32 , resl2=  1.21513e-05 , resinf=  4.88412e-07
+CFL=32.3295

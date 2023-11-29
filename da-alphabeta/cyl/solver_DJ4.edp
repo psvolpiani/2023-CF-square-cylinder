@@ -1,0 +1,45 @@
+include "libff/common.h"
+
+{
+ ofstream fifi(fileoutput,append);
+ fifi << "New gradient" << endl;
+}
+
+  f2212 [u,v,p,nut];
+  f2212 [dJdu,dJdv,dJdp,dJdnut];      // J gradient with respect to the flow (adjoint forcing)
+  f11 [fx,fy];
+  // Load already converged solution
+  {
+    ifstream file("./results/solution-mesh.txt");
+    file >> u[];
+    file >> fx[];
+    file >> dJdu[];
+  }
+
+  include "libff/lib-adj4.idp"
+  f2212 [ua,va,pa,nuta];              // adjoint solution
+  // solve adjoint NS
+  AdjNS(ua[],dJdu[],u[],fx[],nu);
+
+  include "libff/lib-grad4.idp"
+  // compute gradient
+  f11 [dJdfx,dJdfy];                      // J gradient with respect to fnut
+  getdJdfx(dJdfx[],u[],ua[],fx[]);
+
+{
+// Cholesky decomposition changes of variables
+varf mass([u,v],[uh,vh]) = int2d(th,qft=qf1pTlump)( u*uh + v*vh);
+matrix MM = mass(f11,f11);
+real[int] CCaux(f11.ndof),CC(f11.ndof);
+CCaux = MM.diag;
+CC    = sqrt(CCaux);
+dJdfx[]   = dJdfx[] .* CC;
+}
+	// write on file the gradient
+{
+	ofstream file ("./results/gradient-mesh.txt");
+	file.precision(16);
+	for(int ii = 0; ii < f11.ndof; ii++){
+		file << dJdfx[][ii] << endl;
+	}
+}

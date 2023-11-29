@@ -1,0 +1,41 @@
+// Example to convert a FreeFEM solution file to tecplot format (RANS-SA case)
+// Input: *.txt of RANS solution
+// Output: *.dat of RANS solution
+
+
+// Read mesh
+mesh th = readmesh("../mesh/mesh.msh");
+
+// Define spaces
+fespace fuupp(th,[P1b,P1b,P1,P1]);
+fuupp [us,vs,ps,nus];
+
+
+// We load the fields in freefem format
+{
+	ifstream file("../baseline/results/structured/baseline-solution-Re-22000.txt");
+	file >> us[] ;
+}
+
+
+// We save the tecplot file
+int nbv = th.nv;
+int nbt = th.nt;
+{
+	ofstream file("./solution_fields/RANS-SA/baseline-solution-Re-22000.dat");
+    file << "TITLE = "<<"SQUARE_CYLINDER_RE_22000"<<endl;
+	file << "VARIABLES = \"X\" ,  \"Y\" , \"u\" , \"v\" , \"p\" , \"nut\"  " << endl;
+    file << "ZONE"<<"   "<<"N="<<th.nv<<","<<"E="<<th.nt<<","<<"F=FEPOINT,ET=TRIANGLE"<<endl;
+
+	for (int i=0; i<nbv; i++){
+		real xt=th(i).x;
+		real yt=th(i).y;
+		file << xt << " " << yt << " "  << us(xt,yt)       << " " << vs(xt,yt)       << " " 
+						<< ps(xt,yt)   << " " << nus(xt,yt)  << endl;
+	};
+
+	// Liste connectivite
+	for (int k=0; k<nbt; k++){
+		file << int(th[k][0])+1 << " " << int(th[k][1])+1 << " " << int(th[k][2])+1 << endl;
+	};
+};

@@ -1,0 +1,99 @@
+
+include "libff/common.h"
+
+real Re,Reo,nu;             // Reynolds numbers
+
+real[int] Res = [50,200,500,1000,5000,10000,15000,17000,20000,22000];
+
+real Reinit = 50;           // Initial Reynolds
+
+f221 [ur,vr,pr];
+{
+	int nummeshdns  = 31;
+	mesh thdns = readmesh("../reference/results-julien/interpolated_solution/interpolateDNS/mesh_adapted.msh");
+	plot(thdns,wait=iwait);
+
+	fespace fuupdns(thdns,[P1b,P1b,P1]);
+	fuupdns [u0,v0,p0];
+
+
+	fespace fu(thdns,P1);
+	fespace f6u1p(thdns,[P1b,P1b,P1b,P1b,P1b,P1b, P1]);
+	f6u1p [ue,ve,uue,vve,wwe,uve,pe];
+
+	// We load the fields in freefem format
+	{
+		ifstream file("../reference/results-julien/interpolated_solution/interpolateDNS/reference-Ue-Ve-UUe-VVe-WWe-UVe-Pe.txt");
+		file >> ue[] ;
+	}
+        f2 us; us=(ue(x,y)+ue(x,-y))/2.;
+        f2 vs; vs=(ve(x,y)-ve(x,-y))/2.;
+        f1 ps; ps=(pe(x,y)+pe(x,-y))/2.;
+	[ur,vr,pr] = [us,vs,ps];
+}
+
+//plot(ur,wait=iwait);
+//plot(vr,wait=iwait);
+//plot(pr,wait=iwait);
+
+for(int ij = 0; ij < Res.n; ij++)
+{
+  if(ij==0){
+    Re     = Res[0];    // Reynolds number
+    Reo    = Res[0];    // Previous Reynolds number
+    nu     = 1./Re;
+  }
+  else{
+    Re     = Res[ij];   // Reynolds number
+    Reo    = Res[ij-1]; // Previous Reynolds number
+    nu     = 1./Re;
+  }
+  
+  cout << endl;
+  cout << "Re=" << Re << endl;
+  
+  // numerical parameters
+  int NSmaxiter   = 100;   // maximum number of iteration for NS solver
+  int NSiter;              // number of Newton iteration for NS solver
+  real NStoll     = 5.e-9; // tollerance for NS solver
+  real nutinf = 3.*nu;
+  
+  // load NS solver (requires spaces definition)
+  include "libff/lib-ns4.idp"
+  
+  // Initialize assimilation solution (RANS)
+  f2212 [ub,vb,pb,nutb];
+  f11 [fx,fy];
+  fx[]=0;
+  
+  //use another converged solution as starting point
+  //mesh gh = readmesh("../mesh/mesh1/mesh.msh");
+  
+  //fespace fstart(gh,[P1b,P1b,P1,P1]);
+  //fstart [uu,vv,pp,nutt];
+
+  if(Re==Reinit){
+    //ifstream file("./results/structured1/baseline-solution-Re-"+Reo+".txt");
+    //file >> uu[];
+    //[ub,vb,pb,nutb] = [uu,vv,pp,nutt];
+    [ub,vb,pb,nutb] = [ur,vr,0.,nutinf];
+    //ifstream file("./results/baseline-solution-Re-"+Reo+".txt");
+    //file >> ub[];
+  }
+  else{
+    ifstream file("./results/structured/baseline-solution-Re-"+Reo+".txt");
+    file >> ub[];
+  }
+  
+  plot(ub,value=1,wait=iwait);
+  //plot(nutb,value=1,wait=iwait);
+  
+  // compute NS solution
+  NSiter = NS(ub[],fx[],nu,NStoll,NSmaxiter);
+  {
+    ofstream file("./results/structured/baseline-solution-Re-"+Re+".txt");
+    file.precision(16);
+    file << ub[];
+  }
+} 
+

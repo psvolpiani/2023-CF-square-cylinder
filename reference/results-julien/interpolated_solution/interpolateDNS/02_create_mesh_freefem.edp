@@ -1,0 +1,68 @@
+int nummesh = 31;
+
+real r = 0.5;
+
+// Constants for the whole domain
+real L  = 15.; // donwstream domain length
+real l  = 10;   // upstream domain length
+real H  = 10;   // heigth of domain
+real Ho = 3.;   // heigth of outflow boundary (tan(alpha) = Ho/(L-Li))
+
+// Constants for inner domain around the square
+real Li       = 1.5;   // donwstream domain length
+real li       = 1.5;  // upstream domain length
+real Hi       = 1.4;  // heigth of domain
+real tanalpha = (Ho-Hi)/(L-Li); 
+real sinalpha = (Ho-Hi)/sqrt((L-Li)^2 + (Ho-Hi)^2); 
+real cosalpha = (L-Li)/sqrt((L-Li)^2 + (Ho-Hi)^2); 
+real LLi      = 6.0;
+real HHi      = Hi + (LLi-Li) * tanalpha;
+
+//sinalpha = 3./5.;
+//cosalpha = 3./5.;
+
+///////////////////////////////////////////////////////////////
+// First mesh gh1
+// Constants for the radial de-refinement of mesh on the square
+
+real deltar    = 0.0025;     // radial refinement
+real deltao    = 0.01;      // mesh refinement at outer part of the inner domain
+real deltao2   = 0.04;      // mesh refinement at outer part of the inner domain
+real deltao3   = 0.1;      // mesh refinement at outer part of the inner domain
+real deltafree = 1;
+
+///////////////////////////////////////////////////////////////
+// Second mesh gh2
+
+border inner1 (t=0.,1.){x = r;                                   y = r - 2. * r * t;                 label = 2;}
+border inner2 (t=0.,1.){x = - r + 2. * r * t;                    y = r;                              label = 2;}
+border inner3 (t=0.,1.){x = - r;                                 y = - r + 2. * r * t;               label = 2;}
+border inner4 (t=0.,1.){x = r - 2. * r * t;                      y = - r;                            label = 2;}
+
+border inner5 (t=0.,1.){x = - r - 0.2;                           y = - r + 2. * r * t;               label = 10;}
+border inner6 (t=0.,1.){x = - r - 0.1 + 1.5 * r * t;             y =   r + 0.2 + 1.5 * r * t;         label = 10;}
+border inner7 (t=0.,1.){x = - r - 0.1 + 1.5 * r * t;             y = - r - 0.2 - 1.5 * r * t;         label = 10;}
+border inner8 (t=0.,1.){x =   2. * r * t;                        y =   2. * r;                       label = 10;}
+border inner9 (t=0.,1.){x =   2. * r * t;                        y = - 2. * r;                       label = 10;}
+border inner10(t=0.,1.){x =   2. * r + 0.2;                      y = r - 2. * r * t;                 label = 10;}
+
+border inner11(t=0.,1.){x =   2. * r + 0.3 + t * cosalpha * LLi; y =   3. * r + t * sinalpha * LLi;  label = 10;}
+border inner12(t=0.,1.){x =   2. * r + 0.3 + t * cosalpha * LLi; y = - 3. * r - t * sinalpha * LLi;  label = 10;}
+
+border inner13(t=0.,1.){x =   2. * r + 0.3 + cosalpha * LLi + t * cosalpha * LLi; y =   3. * r + sinalpha * LLi + t * sinalpha * LLi;  label = 10;}
+border inner14(t=0.,1.){x =   2. * r + 0.3 + cosalpha * LLi + t * cosalpha * LLi; y = - 3. * r - sinalpha * LLi - t * sinalpha * LLi;  label = 10;}
+
+border inflow (t=0.,1.){x = - l;                                 y = H - 2. * H * t;                 label = 1;}
+border down   (t=0.,1.){x = - l + (L+l) * t;                     y = - H;                            label = 4;}
+border out    (t=0.,1.){x = L;                                   y = - H + 2. * H * t;               label = 3;}
+border top    (t=0.,1.){x = L - (l+L) * t;                       y = H;                              label = 4;}
+
+mesh gh = buildmesh( inner1(2.*r/deltar) + inner2(2.*r/deltar) + inner3(2.*r/deltar) + inner4(2.*r/deltar)
+			/*+ inner5(2.*r/deltao)*/ + inner6(1.5*r/deltao) + inner7(1.5*r/deltao) /*+ inner8(2.*r/deltao) + inner9(2.*r/deltao) */ //+ inner10(2.*r/deltao)
+			+ inner11(LLi/deltao2) + inner12(LLi/deltao2)
+			//+ inner13(LLi/deltao3) + inner14(LLi/deltao3)
+			+ inflow(2.*H/deltafree) + down((l+L)/deltafree) + top((l+L)/deltafree) + out(3.*2.*H/deltafree), fixeborder=1);
+plot(gh);
+
+savemesh(gh,"./mesh_non_adapt.msh");
+

@@ -1,0 +1,72 @@
+include "libff/common.h"
+
+// Initialize assimilation solution (RANS)
+f2212 [u,v,p,nut];
+f2212 [dJdu,dJdv,a,b];
+f1 [fx];
+//f11 [fx, fy];
+
+f1 grad;
+
+
+
+{
+
+	ifstream file("./results/gradient-mesh-iter0025.txt");
+	for(int ii = 0; ii < f1.ndof; ii++){
+	file >> grad[][ii];
+	}
+}
+
+{
+	ifstream file("./results/solution-mesh-iter0075.txt");
+	file >> u[];
+	file >> fx[];
+	file >> dJdu[];
+}
+
+
+
+
+
+
+
+f221 [ur,vr,pr];
+{
+	int nummeshdns  = 31;
+	mesh thdns = readmesh("../../reference/results-julien/interpolated_solution/mesh/mesh_adapted.msh");
+	plot(thdns,wait=waitplt);
+
+	fespace fuupdns(thdns,[P1b,P1b,P1]);
+	fuupdns [u0,v0,p0];
+
+
+	fespace fu(thdns,P1);
+	fespace f6u1p(thdns,[P1b,P1b,P1b,P1b,P1b,P1b, P1]);
+	f6u1p [ue,ve,uue,vve,wwe,uve,pe];
+
+	// We load the fields in freefem format
+	{
+		ifstream file("../../reference/results-julien/interpolated_solution/interpolateDNS/reference-Ue-Ve-UUe-VVe-WWe-UVe-Pe.txt");
+		file >> ue[] ;
+	}
+        f2 us; us=(ue(x,y)+ue(x,-y))/2.;
+        f2 vs; vs=(ve(x,y)-ve(x,-y))/2.;
+        f1 ps; ps=(pe(x,y)+pe(x,-y))/2.;
+	[ur,vr,pr] = [us,vs,ps];
+}
+
+
+
+//real J = int2d(th)( 0.5 * ( (u-ur)^2 + (v-vr)^2 ));
+//cout<<J<<endl;
+
+//f2 diff=u-ur;
+
+
+
+plot(grad,value=1,wait=1);
+plot(fx,value=1,wait=1);
+plot(u,value=1,wait=1);
+plot(v,value=1,wait=1);
+

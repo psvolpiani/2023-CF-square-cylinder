@@ -1,0 +1,119 @@
+bool adaptiso=false; // false: anisotropic mesh
+real adapterr = 0.0003; // this parameter significantly affect the number of triangles
+real toladapt = 0.001;
+
+real adaptanisomax = 5; // This value is modified later in the code.
+real adapthmin = 2.e-03; // This value is modified later in the code.
+int adaptjacoby = 10;
+bool adaptbedge = true;
+int adaptratio = 1.5;
+int adaptthetamax = 30;
+int adaptmax = 300000;
+real adapthmax = 1;
+int[int] walledges = [2]; 
+int adapt=0 ; //0=adapt to mean flow; 1=adapt (also) to first harmonic
+
+
+
+int nummesh  = 31;
+
+mesh th = readmesh("mesh_non_adapt.msh"); 
+ //plot(th);
+
+fespace fuup(th,[P1b,P1b,P1]);
+fespace fuu(th,[P1b,P1b]);
+fespace fu(th,P1b);
+fespace fp(th,P1);
+fespace f0(th,P0);
+
+f0 hT;
+hT=hTriangle;
+
+adapthmin=hT[].min;
+adapthmax=hT[].max;
+cout << "adapthmin= " << adapthmin << endl;
+cout << "adapthmax= " << adapthmax << endl;
+//plot(hT,value=1,wait=1,cmm="hTriangle");
+
+//  physical parameters
+int Nbf     = 5;
+
+fuup [u0,v0,p0];
+fuup[int] [uhr,vhr,phr](Nbf),[uhi,vhi,phi](Nbf);
+
+fuup [u,v,p],[uu,vv,pp],[utemp,vtemp,ptemp];
+
+
+fespace f6u1p(th,[P1b,P1b,P1b,P1b,P1b,P1b,P1]);
+f6u1p [ue,ve,uue,vve,wwe,uve,pe];
+
+// We load the fields in freefem format
+{
+	ifstream file("./non_adapt/reference-Ue-Ve-UUe-VVe-WWe-UVe-Pe.txt");
+	file >> ue[] ;
+}
+
+//plot(ue,wait=1,value=1);
+
+//carrega mesh
+mesh gh = readmesh("mesh_non_adapt.msh");  plot(gh);
+
+fespace g0(gh,P0);
+
+fespace g6u1p(gh,[P1b,P1b,P1b,P1b,P1b,P1b,P1]);
+g6u1p [ug,vg,uug,vvg,wwg,uvg,pg];
+[ug,vg,uug,vvg,wwg,uvg,pg]=[ue,ve,uue,vve,wwe,uve,pe];
+
+
+
+
+//plot(v0,wait=1,value=1);
+//plot(p0,wait=1,value=1);
+
+
+if(adapt==0) gh=adaptmesh(gh,ug,vg,uug,vvg,wwg,uvg,pg,anisomax=adaptanisomax,hmax=adapthmax,hmin=adapthmin,nbvx=adaptmax,iso=adaptiso,splitpbedge=adaptbedge,thetamax=adaptthetamax,keepbackvertices=false,ratio=adaptratio,rescaling=1,err=adapterr,nbsmooth=10,nbjacoby=adaptjacoby);
+
+if(adapt==1) gh=adaptmesh(th,u0,v0,p0,uhr[0],vhr[0],anisomax=adaptanisomax,hmax=adapthmax,hmin=adapthmin,nbvx=adaptmax,iso=adaptiso,splitpbedge=adaptbedge,thetamax=adaptthetamax,keepbackvertices=false,ratio=adaptratio,rescaling=1,err=adapterr,nbsmooth=10,nbjacoby=adaptjacoby);
+
+
+
+[ug,vg,uug,vvg,wwg,uvg,pg]=[ue,ve,uue,vve,wwe,uve,pe];
+
+savemesh(gh,"mesh_adapted.msh");
+
+{
+	ofstream file("MeanFlow-MeshForReconstruction-adapterr-"+adapterr+".txt");
+	file << u0[] << endl;
+}
+
+plot(ug,value=1,wait=1,cmm="u0-reconstructedmesh");
+
+
+
+{
+	{
+		load "MUMPS_seq"
+		load "distance"
+		fespace gu1(gh,P1);
+		//fespace g0(gh,P0);
+		gu1 lset,rhslset,dist;
+		g0 d,d2;
+		varf Lap(u,v) = int2d(gh)( dx(u)*dx(v) + dy(u)*dy(v) ) + on(1,u=1.) + on(3,u=1.) + on(2,u=0.)  ;
+		matrix KK = Lap(gu1,gu1,solver=sparsesolver,tgv=-1);
+		rhslset[] = Lap(0,gu1,tgv=-1);
+		lset[] = KK^-1*rhslset[];
+		plot(lset);
+	
+		dist = lset;
+		distance(gh,lset,dist[]);
+		plot(dist);
+
+		d  = dist;
+		d2 = d*d;
+		{
+			ofstream file("distance_mesh_adapted.txt");
+			file.precision(16);
+			file << d[];
+		}
+	}
+}	

@@ -1,0 +1,91 @@
+New Iteration of the solver_J : 1
+
+Navier-Stokes
+iter=  1 , resl2=  1.39955e-09 , resinf=  6.40641e-10
+  Newton converged in 1 iterations
+GetJ
+ J = 1.24241
+New gradient
+Adjoint Navier-Stokes
+GetdJdfx
+New Iteration of the solver_J : 2
+
+Navier-Stokes
+iter=  1 , resl2=  1.24438 , resinf=  0.198778
+CFL=10
+iter=  2 , resl2=  41010.3 , resinf=  7640.21
+  Newton diverged
+New gradient
+Adjoint Navier-Stokes
+GetdJdfx
+New Iteration of the solver_J : 3
+
+Navier-Stokes
+iter=  1 , resl2=  0.262609 , resinf=  0.0419493
+CFL=10
+iter=  2 , resl2=  388.48 , resinf=  72.0145
+  Newton diverged
+New gradient
+Adjoint Navier-Stokes
+GetdJdfx
+New Iteration of the solver_J : 4
+
+Navier-Stokes
+iter=  1 , resl2=  0.0554199 , resinf=  0.00885282
+CFL=10
+iter=  2 , resl2=  3.8449 , resinf=  0.701603
+  Newton diverged
+New gradient
+Adjoint Navier-Stokes
+GetdJdfx
+New Iteration of the solver_J : 5
+
+Navier-Stokes
+iter=  1 , resl2=  0.0116956 , resinf=  0.00186827
+CFL=10
+iter=  2 , resl2=  0.0530092 , resinf=  0.00862217
+CFL=10
+iter=  3 , resl2=  2.26531 , resinf=  1.13426
+  Newton diverged
+New gradient
+Adjoint Navier-Stokes
+GetdJdfx
+New Iteration of the solver_J : 6
+
+Navier-Stokes
+iter=  1 , resl2=  0.0024682 , resinf=  0.000394272
+CFL=10
+iter=  2 , resl2=  0.00186882 , resinf=  0.000261367
+CFL=13.2073
+iter=  3 , resl2=  0.00605404 , resinf=  0.000959265
+CFL=10
+iter=  4 , resl2=  0.107131 , resinf=  0.0634952
+CFL=10
+iter=  5 , resl2=  0.105464 , resinf=  0.0404996
+CFL=10
+iter=  6 , resl2=  87.8383 , resinf=  73.765
+  Newton diverged
+New gradient
+Adjoint Navier-Stokes
+GetdJdfx
+New Iteration of the solver_J : 7
+
+Navier-Stokes
+iter=  1 , resl2=  0.00052088 , resinf=  8.32058e-05
+CFL=10
+iter=  2 , resl2=  0.000319014 , resinf=  3.37619e-05
+CFL=16.3278
+iter=  3 , resl2=  0.000229904 , resinf=  1.77164e-05
+CFL=22.6564
+iter=  4 , resl2=  0.000205472 , resinf=  1.12871e-05
+CFL=25.3504
+iter=  5 , resl2=  0.000208342 , resinf=  6.28171e-06
+CFL=25.0013
+iter=  6 , resl2=  0.000222991 , resinf=  6.0836e-06
+CFL=23.3588
+New gradient
+Adjoint Navier-Stokes
+New Iteration of the solver_J : 8
+
+New gradient
+Adjoint Navier-Stokes

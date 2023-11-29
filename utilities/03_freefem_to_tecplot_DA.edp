@@ -1,0 +1,55 @@
+
+
+// Example to convert a FreeFEM solution file to tecplot format (data assimilation with forcing term in momentum equations case)
+// Input: *.txt of assimilated solution
+// Output: *.dat of assimilated solution
+
+
+// Read mesh
+mesh th = readmesh("../mesh/mesh.msh"); 
+
+
+// Define spaces
+fespace fuupp(th,[P1b,P1b,P1,P1]);
+fespace fpp(th,[P1,P1]);
+    
+fuupp [us,vs,ps,nus];
+fpp [fx, fy];
+fuupp [dJdu,dJdv,dJdp,dJdnut];
+
+
+// We load the fields in freefem format
+{
+	ifstream file("./da_solutions/da-f/solution-mesh-iter0542.txt");
+	file >> us[] ;
+	file >> fx[];
+	file >> dJdu[];
+}
+
+
+
+// We save the tecplot file
+int nbv = th.nv;
+int nbt = th.nt;
+{
+	ofstream file("./solution_fields/DA/da-f/da_f.dat");
+
+    file << "TITLE = "<<"SQUARE_22000"<<endl;
+	file << "VARIABLES = \"X\" ,  \"Y\" , \"u\" , \"v\" , \"p\" , \"nut\", \"fx\", \"fy\"  " << endl;
+    file << "ZONE"<<"   "<<"N="<<th.nv<<","<<"E="<<th.nt<<","<<"F=FEPOINT,ET=TRIANGLE"<<endl;
+
+	for (int i=0; i<nbv; i++){
+		real xt=th(i).x;
+		real yt=th(i).y;
+		file << xt << " " << yt << " "  << us(xt,yt)       << " " << vs(xt,yt)       << " "
+						<< ps(xt,yt)   << " " << nus(xt,yt) << " " << fx(xt,yt) << " " << fy(xt,yt)  << endl;
+	};
+	// Liste connectivite
+	for (int k=0; k<nbt; k++){
+		file << int(th[k][0])+1 << " " << int(th[k][1])+1 << " " << int(th[k][2])+1 << endl;
+	};
+};
+
+
+
+

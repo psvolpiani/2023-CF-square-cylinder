@@ -1,0 +1,150 @@
+
+// Example to compute the indicator rho_RS from DNS solution
+// Input: *.txt of DNS solution
+// Output: *.dat of rho_RS field
+
+
+// Read mesh
+mesh th = readmesh("../../../reference/results-julien/interpolated_solution/interpolateDNS/mesh_adapted.msh");
+
+
+// Define spaces
+fespace f6u1p(th,[P1b,P1b,P1b,P1b,P1b,P1b, P1]);
+fespace fu(th,P1b);
+fespace fp(th,P1);
+
+f6u1p [u,v,urms,vrms,wrms,uvt,p];
+
+// We load the fields in freefem format
+{
+	ifstream file("../../../reference/results-julien/interpolated_solution/interpolateDNS/reference-Ue-Ve-UUe-VVe-WWe-UVe-Pe.txt");
+	file >> u[] ;
+}
+
+
+//change notation (uu,uv,vv...) and (U,V)
+
+fu U=u, V=v;
+
+
+fu uu=urms^2, uv= uvt,   uw= 0;
+
+fu vu= uvt,   vv=vrms^2, vw= 0;
+
+fu wu= 0,   wv= 0,   ww=wrms^2;
+
+
+//turbulent kinetic energy
+
+fu K=0.5*(uu+vv+ww);
+
+
+
+//anisotropic stress tensor R
+
+fu r11=-uu+2./3.*K, r12= -uv,   r13= -uw;
+
+fu r21= -vu,   r22=-vv+2./3.*K, r23= -vw;
+
+fu r31= -uw,   r32= -vw,   r33=-ww+2./3.*K;
+
+
+//norm of R
+fp rnorm=(r11*r11+r12*r12+r13*r13+r21*r21+r22*r22+r23*r23+r31*r31+r32*r32+r33*r33)^0.5;
+
+
+
+
+//compute derivatives of velocity components
+
+real qfo=4;
+
+matrix DDX,DDY,Mu;
+   {
+	  varf mass(u,uh) = int2d(th,qforder=qfo)( u*uh );
+	  varf DX(u,uh)   = int2d(th,qforder=qfo)( dx(u)*uh );
+	  varf DY(u,uh)   = int2d(th,qforder=qfo)( dy(u)*uh );
+	  DDX = DX(fu,fp);
+	  DDY = DY(fu,fp);
+	  Mu  = mass(fp,fp,solver=sparsesolver);
+   }
+
+
+
+fp dyU,dxV,dxU,dyV;
+fp dyuu,dxvv,dxuu,dyvv;
+fp dyuv,dxuv;
+		{
+			fu tempu1;
+			fp tempu2;
+			tempu1 = U;    tempu2[] = DDY*tempu1[]; dyU[]   = Mu^-1*tempu2[];
+			tempu1 = U;    tempu2[] = DDX*tempu1[]; dxU[]   = Mu^-1*tempu2[];
+			tempu1 = V;    tempu2[] = DDY*tempu1[]; dyV[]   = Mu^-1*tempu2[];
+			tempu1 = V;    tempu2[] = DDX*tempu1[]; dxV[]   = Mu^-1*tempu2[];
+			tempu1 = uu;    tempu2[] = DDY*tempu1[]; dyuu[]   = Mu^-1*tempu2[];
+			tempu1 = uu;    tempu2[] = DDX*tempu1[]; dxuu[]   = Mu^-1*tempu2[];
+			tempu1 = vv;    tempu2[] = DDY*tempu1[]; dyvv[]   = Mu^-1*tempu2[];
+			tempu1 = vv;    tempu2[] = DDX*tempu1[]; dxvv[]   = Mu^-1*tempu2[];
+			tempu1 = uv;    tempu2[] = DDY*tempu1[]; dyuv[]   = Mu^-1*tempu2[];
+			tempu1 = uv;    tempu2[] = DDX*tempu1[]; dxuv[]   = Mu^-1*tempu2[];
+		}
+
+
+
+//stress tensor S
+
+fu s11=dxU, s12=0.5*(dxV+dyU), s13=0;
+
+fu s21=0.5*(dxV+dyU), s22=dyV, s23=0;
+
+fu s31=0, s32=0, s33=0;
+
+
+
+//norm of S
+
+fp snorm=(s11*s11+s12*s12+s13*s13+s21*s21+s22*s22+s23*s23+s31*s31+s32*s32+s33*s33)^0.5;
+
+
+
+//indicator rho_RS
+
+
+fp rhors;
+
+rhors=(abs(r11*s11+r12*s12+r13*s13+r21*s21+r22*s22+r23*s23+r31*s31+r32*32+r33*s33))/((rnorm)*(snorm));
+
+
+
+//constraint rho_RS according to turbulent kinetic energy (rho_RS^star)
+
+fp rhorsmodified;
+
+real Kmax=K[].max;
+fu Krel=K/(Kmax);
+
+rhorsmodified=rhors*(Krel>0.1);
+
+
+
+// We save the tecplot file
+int nbv = th.nv;
+int nbt = th.nt;
+
+{
+	ofstream file("./boussinesq_rho.dat");
+    file << "TITLE = "<<"SQUARE_CYLINDER_RE_22000"<<endl;
+	file << "VARIABLES = \"X\" ,  \"Y\" , \"rhors\"   " << endl;
+    file << "ZONE"<<"   "<<"N="<<th.nv<<","<<"E="<<th.nt<<","<<"F=FEPOINT,ET=TRIANGLE"<<endl;
+
+	for (int i=0; i<nbv; i++){
+		real xt=th(i).x;
+		real yt=th(i).y;
+		file << xt << " " << yt << " "  << rhorsmodified(xt,yt)  << endl;
+	};
+
+	// Liste connectivite
+	for (int k=0; k<nbt; k++){
+		file << int(th[k][0])+1 << " " << int(th[k][1])+1 << " " << int(th[k][2])+1 << endl;
+	};
+};

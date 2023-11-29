@@ -1,0 +1,13 @@
+include "libff/common.h"
+
+// Initialize assimilation solution (RANS)
+f2212 [u,v,p,nut];
+
+{
+	ifstream file("./results/structured3/baseline-solution-Re-22000.txt");
+	file >> u[];
+}
+plot(u,value=1,wait=1);
+plot(v,value=1,wait=1);
+plot(p,value=1,wait=1);
+plot(nut,value=1,wait=1);

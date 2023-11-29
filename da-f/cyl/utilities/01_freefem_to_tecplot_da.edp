@@ -1,0 +1,54 @@
+int nummesh  = 31;
+
+mesh th = readmesh("../../../mesh/mesh.msh"); 
+
+//Concerning da-f
+{
+  fespace fuupp(th,[P1b,P1b,P1,P1]);
+  fespace fuupu(th,[P1b,P1b,P1,P1b]);
+  fuupp [us,vs,ps,nus];
+  fespace fpp(th,[P1,P1]);
+  fpp [fx, fy];
+  fuupp [dJdu,dJdv,a,b];
+  fpp [gradx,grady];
+  
+  // We load the fields in freefem format
+  
+  ifstream file("../results/gradient-mesh-iter0001.txt");
+  for(int ii = 0; ii < fpp.ndof; ii++){
+    file >> gradx[][ii];
+  }
+  
+  {
+    // Cholesky decomposition changes of variables
+    varf mass([u,v],[uh,vh]) = int2d(th,qft=qf1pTlump)( u*uh + v*vh);
+    matrix MM = mass(fpp,fpp);
+    real[int] CCaux(fpp.ndof),CC(fpp.ndof);
+    CCaux = MM.diag;
+    CC    = sqrt(CCaux);
+    gradx[]   = gradx[] ./ CC;
+  }
+  
+  // We save the tecplot file
+  int nbv = th.nv;
+  int nbt = th.nt;
+  {
+    ofstream file("./grad.dat");
+    
+    file << "TITLE = "<<"SQUARE_22000"<<endl;
+    file << "VARIABLES = \"X\" ,  \"Y\" , \"gradfx\" , \"gradfy\"   " << endl;
+    //file << "ZONE NODES=" << nbv << " , ELEMENTS = " << nbt << " , DATAPACKING = POINT , ZONETYPE=FETRIANGLE " << endl;
+    file << "ZONE"<<"   "<<"N="<<th.nv<<","<<"E="<<th.nt<<","<<"F=FEPOINT,ET=TRIANGLE"<<endl;
+    
+    for (int i=0; i<nbv; i++){
+      real xt=th(i).x;
+      real yt=th(i).y;
+      file << xt << " " << yt << " "  << gradx(xt,yt)       << " " << grady(xt,yt)       << " "  << endl;
+    };
+    
+    // Liste connectivite
+    for (int k=0; k<nbt; k++){
+      file << int(th[k][0])+1 << " " << int(th[k][1])+1 << " " << int(th[k][2])+1 << endl;
+    };
+  };
+};

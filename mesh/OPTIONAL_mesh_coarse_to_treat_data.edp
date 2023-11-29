@@ -1,0 +1,409 @@
+
+real r = 0.5;
+
+// Constants for the whole domain
+real L  = 10.; // donwstream domain length
+real L2  = 10;   // upstream domain length
+real Lr  = 10;   // right domain length
+real Ll  = 10;   // left domain length
+real Lu  = 10;   // up domain length
+
+real H  = 10;   // heigth of domain
+real Ho = 3.;   // heigth of outflow boundary (tan(alpha) = Ho/(L-Li))
+
+// Constants for inner domain around the square
+real Li       = 1.5;   // donwstream domain length
+real li       = 1.5;  // upstream domain length
+real Hi       = 1.4;  // heigth of domain
+real tanalpha = (Ho-Hi)/(L-Li); 
+real sinalpha = (Ho-Hi)/sqrt((L-Li)^2 + (Ho-Hi)^2); 
+real cosalpha = (L-Li)/sqrt((L-Li)^2 + (Ho-Hi)^2); 
+real LLi      = 6.0;
+real HHi      = Hi + (LLi-Li) * tanalpha;
+
+//sinalpha = 3./5.;
+//cosalpha = 3./5.;
+
+///////////////////////////////////////////////////////////////
+// First mesh gh1
+// Constants for the radial de-refinement of mesh on the square
+
+real deltar    = 0.05;     // radial refinement
+real deltao    = 0.005;      // mesh refinement at outer part of the inner domain
+real deltao2   = 0.05;      // mesh refinement at outer part of the inner domain
+real deltao3   = 0.1;      // mesh refinement at outer part of the inner domain
+real deltasym1a  = 0.2;       // mesh refinement at symmetrical part
+real deltasym2a  = 0.05;       // mesh refinement at symmetrical part
+real deltafree = 1;
+
+
+
+
+
+
+
+	// Constantes pour la croissance en y (1ere couche)
+	real deltay = 2*r*0.02;
+	real Ky,cy,alphay,dty;
+	real h1 = 2*r*0.5;
+	alphay = 1.02;
+	Ky  = deltay/(alphay - 1.);
+	cy  = log(1. + h1/Ky);
+	dty = log(alphay)/cy;
+
+
+
+	// Constantes pour la croissance en y (2iemme couche interne)
+	real deltay2 = Ky*exp(cy)*(1. - exp(-cy*dty));
+	real deltay3 = 2*r*0.2;
+	real Ky3,cy3,dty3;
+	real h2 = 7.*2*r - h1;
+	Ky3  = deltay3*( h2 - deltay2 )/( deltay2 - deltay3 );
+	cy3  = log( 1. + h2/Ky3 );
+	dty3 = (1./cy3)*log( 1. + deltay3/Ky3 );
+
+	// Constantes pour la croissance en y (2iemme couche en haut)
+	real Ky2,cy2,alphay2,dty2;
+	real H2 = 2*r*9. - h1 - h2;
+	alphay2 = 1.04;
+	Ky2  = deltay3/(alphay2 - 1.);
+	cy2  = log(1. + H2/Ky2);
+	dty2 = log(alphay2)/cy2;
+	
+	// Constantes pour la croissance en x à droite 
+	real deltax1 = 2*r*0.02;
+	real Kx1,cx1,alphax1,dtx1;
+	
+	real beta = 1.;
+	alphax1 = 1.04;
+	Kx1  = deltax1/(alphax1 - 1.);
+	cx1  = log(1. + beta*r/Kx1);
+	dtx1 = log(alphax1)/cx1;
+	
+	// Constantes pour la croissance en x à droite 2
+	real deltax3 = Kx1*exp(cx1)*( 1. - exp(-cx1*dtx1) );
+	real deltax4 = 5.*deltax1;
+	real Kx3,cx3,dtx3;
+	Kx3  = deltax4* (r - deltax3 )/( deltax3 - deltax4 );
+	cx3  = log( 1. + r/Kx3 );
+	dtx3 = (1./cx3)*log( 1. + deltax4/Kx3 );
+	
+	// Constantes pour la croissance en x à gauche
+	real deltax2 = deltax1;
+	real Kx2,cx2,alphax2,dtx2;
+	real beta2 = 1.;
+	alphax2 = 1.01;
+	Kx2  = deltax2/(alphax2 - 1.);
+	cx2  = log(1. + r/Kx2);
+	dtx2 = log(alphax2)/cx2;
+
+
+	real deltax5 = deltax1;
+	real Kx4,cx4,alphax4,dtx4;
+	real beta4 = 1.;
+	alphax4 = 1.08;
+	Kx4  = deltax5/(alphax4 - 1.);
+	cx4 = log(1. + 0.5*L/Kx4);
+	dtx4 = log(alphax4)/cx4;
+	
+	// Constantes pour la croissance en x à gauche 2
+	//real deltax5 = Kx2*exp(cx2)*( 1. - exp( - cx2*dtx2 ) );
+	//real deltax6 = deltax1;
+	//real Kx4,cx4,dtx4;
+	//Kx4  = deltax6*( r - deltax5 )/( deltax5 - deltax6 );
+	//cx4  = log( 1. + r/Kx4 );
+	//dtx4 = (1./cx4)*log( 1. + deltax6/Kx4 );
+
+
+
+
+	
+	//int[int] lab1 = [2,10,10,10];
+	//mesh th1 = square(1./dtx2,1./dty,[-Kx2*(exp(cx2*x)-1.),Ky*(exp(cy*y)-1.)],label=lab1,flags=2);
+	//plot(th1,wait=1);
+
+	//int[int] lab1haut = [4,10,10,10];
+	//mesh th1haut = square(1./dtx2,1./dty3,[-Kx2*(exp(cx2*x)-1.),(h1+h2)-Ky3*(exp(cy3*y)-1.)],label=lab1haut);
+	//plot(th1haut,wait=1);
+
+	//int[int] lab1p = [2,10,10,1];
+	//mesh th1p = square(1./dtx4,1./dty,[-L2+Kx4*(exp(cx4*x)-1.),Ky*(exp(cy*y)-1.)],label=lab1p);
+	//plot(th1p,wait=1);
+	
+	//int[int] lab1phaut = [4,10,10,1];
+	//mesh th1phaut = square(1./dtx4,1./dty3,[-L2+Kx4*(exp(cx4*x)-1.),(h1+h2)-Ky3*(exp(cy3*y)-1.)],label=lab1phaut,flags=2);
+	//plot(th1phaut,wait=1);
+
+
+
+////////////////////////////////vertices
+
+
+	int[int] labvertice = [10,10,10,10];
+	mesh thvertice = square(1./dty,1./dty*2.,[-Ky*(exp(cy*x)-1.),Ky*(exp(cy*y)-1.)],label=labvertice,flags=2);
+	//plot(thvertice,wait=1);
+
+	mesh rhverticeleft = movemesh(thvertice,[x-r,y+r]); //plot(rhverticeleft,wait=1);
+
+
+	
+	mesh rhverticeright = movemesh(thvertice,[-x+r,y+r]);
+	//plot(rhverticeright,wait=1);
+
+
+
+
+
+////////////////////////////////
+
+	
+	int[int] lab1 = [2,10,10,6];
+	mesh th1 = square(1./dtx2,1./dty,[-Kx2*(exp(cx2*x)-1.),Ky*(exp(cy*y)-1.)],label=lab1,flags=2);
+	//plot(th1,wait=1);
+
+
+	mesh gh10 =  th1 ; 
+
+	mesh rh10 = movemesh(gh10,[y,x]);
+	rh10 = movemesh(rh10,[x+r,y]); 
+
+
+	int[int] lab1haut = [3,10,10,6];
+	mesh th1haut = square(1./dtx2,1./dty3,[-Kx2*(exp(cx2*x)-1.),(h1+h2)-Ky3*(exp(cy3*y)-1.)],label=lab1haut);
+	//plot(th1haut,wait=1);
+
+
+	mesh gh1 =  th1haut ; 
+
+	mesh rh1 = movemesh(gh1,[y,x]);
+	rh1 = movemesh(rh1,[x+r,y]); 
+
+
+	//plot(rh1,wait=1);
+
+
+
+
+	int[int] lab12 = [2,10,10,6];
+	mesh th12 = square(1./dtx2,1./dty,[-Kx2*(exp(cx2*x)-1.),Ky*(exp(cy*y)-1.)],label=lab12,flags=2);
+	//plot(th1,wait=1);
+
+	mesh gh120 =  th12 ; 
+
+
+
+
+	mesh rh20 = movemesh(gh120,[-y,-x]); 
+	rh20 = movemesh(rh20,[x-r,y]);	
+
+
+
+	int[int] lab12haut = [1,10,10,6];
+	mesh th12haut = square(1./dtx2,1./dty3,[-Kx2*(exp(cx2*x)-1.),(h1+h2)-Ky3*(exp(cy3*y)-1.)],label=lab12haut);
+	//plot(th1haut,wait=1);
+
+	mesh gh12 =  th12haut ; 
+
+
+
+
+	mesh rh2 = movemesh(gh12,[-y,-x]); 
+	rh2 = movemesh(rh2,[x-r,y]);	
+
+
+	//plot(rh2,wait=1);
+
+
+	
+///////////////////////////////
+
+
+	int[int] lab1middle = [3,10,10,10];
+	mesh th1middle = square(1./dty*2.,1./dty3,[-Ky*(exp(cy*x)-1.),(h1+h2)-Ky3*(exp(cy3*y)-1.)],label= lab1middle);
+;
+
+	
+
+	mesh gh1middle = movemesh(th1middle,[y,-x]); 
+	gh1middle = movemesh(gh1middle,[x+r,y+r]); 
+
+
+	//plot(gh1middle,wait=1);
+
+	int[int] lab1middle2 = [4,10,10,10];
+	mesh th1middle2 = square(1./dty,1./dty3*2.,[-Ky*(exp(cy*x)-1.),(h1+h2)-Ky3*(exp(cy3*y)-1.)],label= lab1middle2);
+;
+
+
+	mesh gh1middleup = movemesh(th1middle2,[-x+r,y+r]); 
+	
+	//plot(gh1middleup,wait=1);
+
+
+	//rh1 =  rh1+ gh1middle+ gh1middleup; 
+	//rh1 =  rh1+ gh1middle; 
+
+///////////////////////////////
+
+
+	int[int] lab2middle = [1,10,10,10];
+	mesh th2middle = square(1./dty*2.,1./dty3,[-Ky*(exp(cy*x)-1.),(h1+h2)-Ky3*(exp(cy3*y)-1.)],label= lab2middle);
+;
+
+
+	mesh gh2middle = movemesh(th2middle,[-y,-x]); 
+
+	gh2middle = movemesh(gh2middle,[x-r,y+r]);  
+
+
+	//plot(gh2middle,wait=1);
+
+
+
+	int[int] lab2middle2 = [4,10,10,10];
+	mesh th2middle2 = square(1./dty,1./dty3*2.,[-Ky*(exp(cy*x)-1.),(h1+h2)-Ky3*(exp(cy3*y)-1.)],label= lab2middle2);
+;
+
+	mesh gh2middleup = movemesh(th2middle2,[x-r,y+r]); 
+
+	//plot(gh2middleup,wait=1);
+
+
+	//rh2 =  rh2+ gh2middle + gh2middleup; 
+	//rh2 =  rh2+ gh2middle; 
+
+
+	
+////////////////////////////////top
+
+
+	int[int] lab2 = [2,10,10,10];
+	mesh th2 = square(1./dtx2,1./dty,[-r+x,Ky*(exp(cy*y)-1.)],label=lab2,flags=2);
+
+
+	mesh gh20 =  th2 ; 
+
+
+	mesh rh30 = movemesh(gh20,[x,y+r]); 
+
+	int[int] lab2haut = [4,10,10,10];
+	mesh th2haut = square(1./dtx2,1./dty3,[-r+x,(h1+h2)-Ky3*(exp(cy3*y)-1.)],label=lab2haut);
+
+
+	mesh gh2 =  th2haut ;
+
+	mesh rh3 = movemesh(gh2,[x,y+r]); 
+
+
+	
+
+
+////////////////////////////////
+
+
+
+
+	int[int] lab3haut = [1,10,10,4];
+	mesh th3haut = square(1./dty3*2.,1./dty3,[-(h1+h2)+Ky3*(exp(cy3*x)-1.),(h1+h2)-Ky3*(exp(cy3*y)-1.)],label=lab3haut);
+	//plot(th1haut,wait=1);
+
+
+
+
+	mesh gh3 =  th3haut ; 
+
+	
+
+	mesh rh4 = movemesh(gh3,[-y,-x]); 
+	rh4 = movemesh(rh4,[x-r,y+r]); 
+
+
+
+	
+
+	int[int] lab32haut = [3,10,10,4];
+	mesh th32haut = square(1./dty3*2.,1./dty3,[-(h1+h2)+Ky3*(exp(cy3*x)-1.),(h1+h2)-Ky3*(exp(cy3*y)-1.)],label=lab32haut);
+	//plot(th1haut,wait=1);
+
+
+
+
+	mesh gh32 =  th32haut ; 
+
+
+	mesh rh5 = movemesh(gh32,[y,-x]); 
+	rh5 = movemesh(rh5,[x+r,y+r]); 
+
+
+
+
+
+
+////////////////////////////////
+
+
+
+	rh30 =movemesh(rh30,[x*y/r,y]);
+
+	rh3 =movemesh(rh3,[x*y/r,y]);
+ 	//top = trunc(top, 1, split=2);
+
+
+	rh10=movemesh(rh10,[x,-(y*(x)/(r))]);
+
+	rh1=movemesh(rh1,[x,-(y*(x)/(r))]);
+
+	
+	rh20=movemesh(rh20,[x,-y*x/r]);
+
+	rh2=movemesh(rh2,[x,-y*x/r]);
+
+
+	mesh bottom=movemesh(rh3,[-x,-y]);
+	
+	mesh th = rh10+ rh1+ rh20+rh2+ rh30+rh3;
+
+
+
+
+
+
+	
+////////////////////////////////
+
+
+
+
+////////////////////////////////
+
+
+
+	cout << "This mesh has " << th.nt << " triangles " << endl;
+
+	plot(th,wait=1);
+
+
+
+
+	savemesh(th,"./mesh-coarse-to-treat-data.msh");
+
+	{
+		
+fespace f0(th,P0);
+f0 d,d2;
+
+
+
+d =   (abs(y)<=0.5)*min(abs(x-0.5),abs(x+0.5))
++ (abs(x)<=0.5)*min(abs(y-0.5),abs(y+0.5))
++ ((x>0.5) && (abs(y)>0.5))*min(sqrt((x-0.5)^2 + (y-0.5)^2),sqrt((x-0.5)^2 + (y+0.5)^2))
++ ((x<-0.5) && (abs(y)>0.5))*min(sqrt((x+0.5)^2 + (y-0.5)^2),sqrt((x+0.5)^2 + (y+0.5)^2)); 
+// Distance to the nearest solid wall
+
+plot(d,value=1,wait=1);
+		{
+			ofstream file("./distance-mesh-coarse-to-treat-data.txt");
+			file.precision(16);
+			file << d[];
+		}
+	}

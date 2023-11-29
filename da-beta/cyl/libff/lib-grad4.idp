@@ -1,0 +1,63 @@
+
+//                                                                            //
+// Gradient toolbox                                                           //
+//                                                                            //
+// Contents: - dJdnut = getdJdnut(flow[],adj[])                               //
+//                                                                            //
+// Meshes th, thr and space f22p, UrxUrxPr must be defined globally.          //
+//                                                                            //
+
+
+func int getdJdfx(real[int] &grad, real[int] &flow, real[int] &adj, real[int] &control){
+  // Unwrap direct and adjoint solutions
+  f2212 [ub ,vb ,pb ,nutb];    ub[]  = flow;
+  f2212 [ua,va,pa,nuta];  ua[]  = adj;
+  f1 ffx;   ffx[] = control;
+  f1 dJx;
+  
+  {
+    ofstream fifi(fileoutput,append);
+    fifi << "GetdJdfx" << endl;
+  }
+  include "libff/varf1.idp"
+  
+  // Computation of SA quantities
+  f1 dyub,dxvb;
+  {
+    f2 tempu1;
+    f1 tempu2;
+    tempu1 = ub;    tempu2[] = DDY*tempu1[]; dyub[]   = Mu^-1*tempu2[];
+    tempu1 = vb;    tempu2[] = DDX*tempu1[]; dxvb[]   = Mu^-1*tempu2[];
+  }
+  
+  {
+    // Spallart Almaras
+    f1 xi,xi2,xi3;
+    f1 Stilde;
+    f1 S,S0,Sbar;
+    f1 gn,fv1,fv2;
+    
+    xi = nutb/nu;
+    xi2 = xi*(nutb/nu);
+    xi3 = xi2*(nutb/nu);
+    fv1 = (xi3)/(xi3 + cv1^3);
+    fv2 = 1. - xi/( 1. + xi*fv1 );
+    S = sqrt((dyub - dxvb)^2 + M^2 ) - M;
+    S0 = S;
+    Sbar = nutb*fv2/(kk*kk*d2);
+    Stilde = Sbar + S0;
+    gn = 1. - 1000.*xi2/( 1. + xi2 );
+    {
+      varf grad(u,v)=int2d(th,qforder=7)(-nuta*((xi>=0.)*cb1*Stilde*nutb + (xi< 0.)*(cb1*S*nutb*gn))*v);
+      f1 aux; aux[]=grad(0,f1);
+      varf mu(u,v)=int2d(th,qforder=qfo)(u*v);
+      matrix Mu=mu(f1,f1,solver=sparsesolver);
+      dJx[] =Mu^-1 * aux[];
+    }
+    //dJx = -nuta*((xi>=0.)*cb1*Stilde*nutb + (xi< 0.)*(cb1*S*nutb*gn));
+  }
+ 
+  // Output
+  grad = dJx[];
+  return 0;
+}

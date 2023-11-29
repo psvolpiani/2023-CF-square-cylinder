@@ -1,0 +1,57 @@
+f0 dtlocal; // For definition of local time step
+f1 csiSA,dcsiSAdnut,csiNS,dcsiNSdnut;
+f1 TauSUPG,dTauSUPGdu,dTauSUPGdv,TauGradDiv,dTauGradDivdu,dTauGradDivdv;
+f1 s,dsddxnu,dsddynu,dsdnu,dsduv;
+
+varf vA([u,v,p,nut],[uh,vh,ph,nuth]) = int2d(th,qforder=qfo)
+(
+ // Linearization-NS
+ (1./dtlocal)*( u*uh + v*vh // - (1./(a*a))*p*ph
+               )
+ - (dx(u) + dy(v) )*ph - (dx(uh)+ dy(vh))*p
+ + (ub*dx(u)+vb*dy(u)+u*dx(ub)+v*dy(ub))*uh
+ + (ub*dx(v)+vb*dy(v)+u*dx(vb)+v*dy(vb))*vh
+ + csiNS*( 2.*dx(u)*dx(uh) + 2.*dy(v)*dy(vh)+ (dy(u)+dx(v))*dx(vh) + (dx(v)+dy(u))*dy(uh)  )
+ + dcsiNSdnut*nut*( 2.*dx(ub)*dx(uh) + 2.*dy(vb)*dy(vh) + (dy(ub)+dx(vb))*dx(vh) + (dx(vb)+dy(ub))*dy(uh)  )
+ // Stabilisation-NS
+ +TauSUPG*(u*dx(uh)+v*dy(uh))*(ub*dx(ub)+vb*dy(ub) )
+ +TauSUPG*(u*dx(vh)+v*dy(vh))*(ub*dx(vb)+vb*dy(vb) )
+ +TauSUPG*(ub*dx(uh)+vb*dy(uh))*(u*dx(ub)+v*dy(ub)+ub*dx(u)+vb*dy(u) )
+ +TauSUPG*(ub*dx(vh)+vb*dy(vh))*(u*dx(vb)+v*dy(vb)+ub*dx(v)+vb*dy(v) )
+ +(dTauSUPGdu*u+dTauSUPGdv*v)*(ub*dx(uh)+vb*dy(uh))*(ub*dx(ub)+vb*dy(ub) )
+ +(dTauSUPGdu*u+dTauSUPGdv*v)*(ub*dx(vh)+vb*dy(vh))*(ub*dx(vb)+vb*dy(vb) )
+ + TauGradDiv*(dx(u)+dy(v))*(dx(uh)+dy(vh))
+ + (dTauGradDivdu*u+dTauGradDivdv*v)*(dx(ub)+dy(vb))*(dx(uh)+dy(vh))
+ // Linearization-SA
+ +  1./dtlocal*nut*nuth
+ + ( ub*dx(nut) + vb*dy(nut) )*nuth + ( u*dx(nutb) + v*dy(nutb) )*nuth
+ + (1./sigma)*csiSA*(dx(nut)*dx(nuth) + dy(nut)*dy(nuth))
+ + (1./sigma)*dcsiSAdnut*nut*(dx(nutb)*dx(nuth) + dy(nutb)*dy(nuth))
+ - dsdnu*nut*nuth - ( dsddxnu*dx(nut) + dsddynu*dy(nut))*nuth
+ - dsduv*(dy(u) - dx(v))*nuth
+ // Linearization-Stabilization-SA
+ + TauSUPG*(u*dx(nuth)+v*dy(nuth))*(ub*dx(nutb)+vb*dy(nutb) )
+ + TauSUPG*(ub*dx(nuth)+vb*dy(nuth))*(   ub*dx(nut)+vb*dy(nut)+u*dx(nutb)+v*dy(nutb) )
+ + (dTauSUPGdu*u+dTauSUPGdv*v)*(ub*dx(nuth)+vb*dy(nuth))*(ub*dx(nutb)+vb*dy(nutb) )
+ )
++ on(1,4,u=1.,v=1.,nut=1.) + on(2,u=1,v=1,nut=1.) + on(6,v=1.);
+
+varf vrhs([u,v,p,nut],[uh,vh,ph,nuth]) =
+- int2d(th,qforder=qfo)
+(
+ // Navier-Stokes (NS)
+ csiNS*( 2.*dx(ub)*dx(uh) + 2.*dy(vb)*dy(vh) + (dy(ub)+dx(vb))*dx(vh) + (dx(vb)+dy(ub))*dy(uh) )
+ - (dx(ub) + dy(vb))*ph - (dx(uh) + dy(vh))*pb //+ 1.e-12*pb*ph
+ + (ub*dx(ub)+vb*dy(ub))*uh + (ub*dx(vb)+vb*dy(vb))*vh
+ // Stabilisation-NS
+ +TauSUPG*(ub*dx(uh)+vb*dy(uh))*(ub*dx(ub)+vb*dy(ub) )
+ +TauSUPG*(ub*dx(vh)+vb*dy(vh))*(ub*dx(vb)+vb*dy(vb) )
+ +TauGradDiv*(dx(ub)+dy(vb))*(dx(uh)+dy(vh))
+ // Modele Spalart-Allmaras
+ +( ub*dx(nutb) + vb*dy(nutb) )*nuth - s*nuth + (1./sigma)*csiSA*(dx(nutb)*dx(nuth) + dy(nutb)*dy(nuth)) - ffx*nuth
+ // Stabilisation-SA
+ + TauSUPG*(ub*dx(nuth)+vb*dy(nuth))*(ub*dx(nutb)+vb*dy(nutb) )
+ )
++ on(1,4,u=ur-ub,v=vr-vb,nut=nutinf-nutb) + on(2,u=-ub,v=-vb,nut=-nutb) + on(6,v=-vb);
+
+

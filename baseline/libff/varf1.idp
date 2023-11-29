@@ -1,0 +1,29 @@
+
+f0 d2;
+{
+  f0 d;
+  ifstream file("../mesh/distance-mesh.txt");
+  file >> d[];
+  d2 = d*d;
+}
+
+// Matrices
+matrix DDX,DDY,Mu;
+{
+  varf mass(u,uh) = int2d(th,qforder=qfo)( u*uh );
+  varf DX(u,uh)   = int2d(th,qforder=qfo)( dx(u)*uh );
+  varf DY(u,uh)   = int2d(th,qforder=qfo)( dy(u)*uh );
+  DDX = DX(f2,f1);
+  DDY = DY(f2,f1);
+  Mu  = mass(f1,f1,solver=sparsesolver);
+}
+
+real cv1    = 7.1;
+real cb1    = 0.1355;
+real cb2    = 0.622;
+real sigma  = 2./3.;
+real kk     = 0.41;
+real cw1    = 0.1355/(kk^2.) + (1.+cb2)/sigma;
+real cw2    = 0.3;
+real cw3    = 2.;
+real M     = 0.00001; // Regularization of model

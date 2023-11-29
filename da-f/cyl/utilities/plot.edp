@@ -1,0 +1,109 @@
+include "libff/common.h"
+
+// Initialize assimilation solution (RANS)
+f2212 [u,v,p,nut];
+f2212 [dJdu,dJdv,a,b];
+f11 [fx, fy];
+f11 [gradx,grady];
+
+ifstream file("../results/gradient-mesh-iter0001.txt");
+for(int ii = 0; ii < f11.ndof; ii++){
+  file >> gradx[][ii];
+}
+
+{
+  // Cholesky decomposition changes of variables
+  varf mass([u,v],[uh,vh]) = int2d(th,qft=qf1pTlump)( u*uh + v*vh);
+  matrix MM = mass(f11,f11);
+  real[int] CCaux(f11.ndof),CC(f11.ndof);
+  CCaux = MM.diag;
+  CC    = sqrt(CCaux);
+  gradx[]   = gradx[] ./ CC;
+}
+
+real normgrad0  = int2d(th)( gradx^2 + grady^2 );
+normgrad0=normgrad0^0.5;
+
+for(int i = 1; i < 10; i++){
+  
+  ifstream file("../results/gradient-mesh-iter000"+i+".txt");
+  for(int ii = 0; ii < f11.ndof; ii++){
+    file >> gradx[][ii];
+  }
+  
+  {
+    // Cholesky decomposition changes of variables
+    varf mass([u,v],[uh,vh]) = int2d(th,qft=qf1pTlump)( u*uh + v*vh);
+    matrix MM = mass(f11,f11);
+    real[int] CCaux(f11.ndof),CC(f11.ndof);
+    CCaux = MM.diag;
+    CC    = sqrt(CCaux);
+    gradx[]   = gradx[] ./ CC;
+  }
+  
+  real normgrad  = int2d(th)( gradx^2 + grady^2 );
+  normgrad=normgrad^0.5;
+  
+  {
+    ofstream file("./gradnorm.txt", append);
+    file.precision(16);
+    file << normgrad/normgrad0 << endl;
+  }
+}
+
+for(int i = 10; i < 99; i++){
+  
+  ifstream file("../results/gradient-mesh-iter00"+i+".txt");
+  for(int ii = 0; ii < f11.ndof; ii++){
+    file >> gradx[][ii];
+  }
+  
+  {
+    // Cholesky decomposition changes of variables
+    varf mass([u,v],[uh,vh]) = int2d(th,qft=qf1pTlump)( u*uh + v*vh);
+    matrix MM = mass(f11,f11);
+    real[int] CCaux(f11.ndof),CC(f11.ndof);
+    CCaux = MM.diag;
+    CC    = sqrt(CCaux);
+    gradx[]   = gradx[] ./ CC;
+  }
+  
+  real normgrad  = int2d(th)( gradx^2 + grady^2 );
+  normgrad=normgrad^0.5;
+  
+  {
+    ofstream file("./gradnorm.txt", append);
+    file.precision(16);
+    file << normgrad/normgrad0 << endl;
+  }
+}
+
+for(int i = 100; i < 174; i++){
+  
+  ifstream file("../results/gradient-mesh-iter0"+i+".txt");
+  for(int ii = 0; ii < f11.ndof; ii++){
+    file >> gradx[][ii];
+  }
+  
+  {
+    // Cholesky decomposition changes of variables
+    varf mass([u,v],[uh,vh]) = int2d(th,qft=qf1pTlump)( u*uh + v*vh);
+    matrix MM = mass(f11,f11);
+    real[int] CCaux(f11.ndof),CC(f11.ndof);
+    CCaux = MM.diag;
+    CC    = sqrt(CCaux);
+    gradx[]   = gradx[] ./ CC;
+  }
+  
+  real normgrad  = int2d(th)( gradx^2 + grady^2 );
+  normgrad=normgrad^0.5;
+  
+  {
+    ofstream file("./gradnorm.txt", append);
+    file.precision(16);
+    file << normgrad/normgrad0 << endl;
+  }
+}
+
+plot(gradx,value=1,wait=1);
+

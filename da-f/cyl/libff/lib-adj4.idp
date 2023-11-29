@@ -1,0 +1,38 @@
+////////////////////////////////////////////////////////////////////////////////
+func int AdjNS(real[int] &adj,
+							 real[int] &forc,
+							 real[int] &flow,
+							 real[int] &fx,
+							 real nu)
+{	
+	// Unwrap direct solution and forcing (and turbulent viscosity)
+	f2212 [ub,vb,pb ,nutb];  ub[]=flow;
+	f11 [ffx,ffy]; ffx[]     = fx;
+	f2212 [af1,af2,afp,afnut]; af1[]=forc;
+
+  {
+   ofstream fifi(fileoutput,append);
+   fifi << "Adjoint Navier-Stokes" << endl;
+  }
+
+  include "libff/varf1.idp"
+  include "libff/varf-adjoint.idp"
+  include "libff/varf2.idp"
+
+  // Construction of matrix
+    
+    matrix Aadj;
+	{
+		cout << "  -- build matrix" << endl;
+		Aadj = vA(f2212,f2212,tgv=1.e30,solver=GMRES);
+		Aadj = Aadj';
+	}
+        set(Aadj,solver=sparsesolver);
+
+	// Solve adjoint equations
+	f2212 [ua1,ua2,pa,nuta];	
+	ua1[]   = Aadj^-1*af1[];
+	
+	// Output
+	adj = ua1[]; return 0;
+}

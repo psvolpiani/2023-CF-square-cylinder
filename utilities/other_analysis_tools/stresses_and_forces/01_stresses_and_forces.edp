@@ -1,0 +1,292 @@
+
+// Example to compute the components of the traceless Reynolds stress tensor and the forces resulting from its divergent
+// Input: *.txt of DNS solution and *.txt of RANS or assimilated solution
+// Output: *.dat of the Reynolds stress tensor components or forces from divergent
+
+
+
+/////////////////// Compute Reynolds stress components and divergent
+
+// Read mesh
+mesh th = readmesh("../../../reference/results-julien/interpolated_solution/interpolateDNS/mesh_adapted.msh");
+
+
+// Define spaces
+fespace f6u1p(th,[P1b,P1b,P1b,P1b,P1b,P1b, P1]);
+fespace fpp(th,[P1,P1]);
+fespace fu(th,P1b);
+fespace fp(th,P1);
+
+f6u1p [u,v,urms,vrms,wrms,uvt,p];
+
+// We load the fields in freefem format
+{
+	ifstream file("../../../reference/results-julien/interpolated_solution/interpolateDNS/reference-Ue-Ve-UUe-VVe-WWe-UVe-Pe.txt");
+	file >> u[] ;
+}
+
+
+
+//change notation (uu,uv,vv...) and (U,V)
+
+fu U=u, V=v;
+
+
+fu uu=urms^2, uv= uvt,   uw= 0;
+
+fu vu= uvt,   vv=vrms^2, vw= 0;
+
+fu wu= 0,   wv= 0,   ww=wrms^2;
+
+
+//turbulent kinetic energy
+
+fu K=0.5*(uu+vv+ww);
+
+
+
+//Reynolds stress tensor R
+
+fu r11=-uu+2./3.*K, r12= -uv,   r13= -uw;
+
+fu r21= -vu,   r22=-vv+2./3.*K, r23= -vw;
+
+fu r31= -uw,   r32= -vw,   r33=-ww+2./3.*K;
+
+
+
+
+//Divergent of R
+
+
+real qfo=4;
+matrix DDXr,DDYr,Mur;
+   {
+	  varf massr(u,uh) = int2d(th,qforder=qfo)( u*uh );
+	  varf DXr(u,uh)   = int2d(th,qforder=qfo)( dx(u)*uh );
+	  varf DYr(u,uh)   = int2d(th,qforder=qfo)( dy(u)*uh );
+	  DDXr = DXr(fu,fp);
+	  DDYr = DYr(fu,fp);
+	  Mur  = massr(fp,fp,solver=sparsesolver);
+   }
+
+
+
+fp dxr11,dyr12,dxr21,dyr22;
+
+		{
+			fu tempu1r;
+			fp tempu2r;
+			tempu1r = r12;    tempu2r[] = DDYr*tempu1r[]; dyr12[]   = Mur^-1*tempu2r[];
+			tempu1r = r11;    tempu2r[] = DDXr*tempu1r[]; dxr11[]   = Mur^-1*tempu2r[];
+			tempu1r = r22;    tempu2r[] = DDYr*tempu1r[]; dyr22[]   = Mur^-1*tempu2r[];
+			tempu1r = r21;    tempu2r[] = DDXr*tempu1r[]; dxr21[]   = Mur^-1*tempu2r[];
+		}
+
+
+
+
+fpp [fxdns,fydns];
+
+[fxdns,fydns]=[dxr11+dyr12,dxr21+dyr22];
+
+
+
+/////////////////////////// Example: Compute f^DA = div(2*nuT*S_ij) + f_u
+////////////////////////// ,i.e., the forcing term that comes from the eddy-viscosity and the contol force
+////////////////////////// ,similarly, it can be done for the RANS and all the assimilated fields to find the stress components
+
+
+
+// Read mesh
+mesh gh = readmesh("../../../mesh/mesh.msh"); 
+
+// Define spaces
+fespace guupp(gh,[P1b,P1b,P1,P1]);
+fespace gpp(gh,[P1,P1]);
+fespace gp(gh,P1);
+fespace gu(gh,P1b);
+fespace g0(gh,P0);
+
+
+guupp [ua,va,pa,nuta];
+gpp [fx, fy];
+gpp [fcx, fcy];
+guupp [dJdu,dJdv,dJdp,dJdnut];
+ 
+
+// We load the fields in freefem format
+{
+	ifstream file("../../solution_fields/DA/da-f/solution-mesh-iter0542.txt");
+	file >> ua[] ;
+	file >> fcx[];
+	file >> dJdu[];
+}
+
+
+//Compute nuT from nut
+
+real Re		= 22000;
+real nu         = 1./Re;
+real cv1    = 7.1;
+real cb1    = 0.1355;
+real cb2    = 0.622;
+real sigma  = 2./3.;
+real kk     = 0.41;
+real cw1    = 0.1355/(kk^2.) + (1.+cb2)/sigma;
+real cw2    = 0.3;
+real cw3    = 2.;
+real M     = 0.00001; // Regularization of model
+
+gp xi,xi2,xi3;
+g0 r,rp,drdnu,drduv;
+gp Stilde;
+gp nuT,fv1,dfv1dnu,fv2,fw,g,gn;
+gp csiSA,dcsiSAdnut,csiNS,dcsiNSdnut;
+			
+xi = nuta/nu;
+xi2 = xi*(nuta/nu);
+xi3 = xi2*(nuta/nu);
+csiSA = (xi>=0.)*nu*(1.+xi) + (xi<0.)*nu*(1.+xi+0.5*xi2);
+fv1 = (xi3)/(xi3 + cv1^3);
+fv2 = 1. - xi/( 1. + xi*fv1 );
+nuT = nuta*fv1;
+
+
+
+
+//Compute derivatives of velocity components
+
+matrix DDXa,DDYa,Mua;
+   {
+	  varf massa(u,uh) = int2d(gh,qforder=qfo)( u*uh );
+	  varf DXa(u,uh)   = int2d(gh,qforder=qfo)( dx(u)*uh );
+	  varf DYa(u,uh)   = int2d(gh,qforder=qfo)( dy(u)*uh );
+	  DDXa = DXa(gu,gp);
+	  DDYa = DYa(gu,gp);
+	  Mua  = massa(gp,gp,solver=sparsesolver);
+   }
+
+
+
+gp dyua,dxva,dxua,dyva;
+		{
+			gu tempu1a;
+			gp tempu2a;
+			tempu1a = ua;    tempu2a[] = DDYa*tempu1a[]; dyua[]   = Mua^-1*tempu2a[];
+			tempu1a = ua;    tempu2a[] = DDXa*tempu1a[]; dxua[]   = Mua^-1*tempu2a[];
+			tempu1a = va;    tempu2a[] = DDYa*tempu1a[]; dyva[]   = Mua^-1*tempu2a[];
+			tempu1a = va;    tempu2a[] = DDXa*tempu1a[]; dxva[]   = Mua^-1*tempu2a[];
+		}
+
+
+
+
+
+//strain tensor S
+
+
+gu sa11=dxua,                 sa12=0.5*(dxva+dyua),      sa13=0;
+
+gu sa21=0.5*(dxva+dyua),           sa22=dyva,             sa23=0;
+
+gu sa31=0,                         sa32=0,                sa33=0;
+
+
+//Stress components due to eddy-viscosity portion, i.e., 2*nuT*S_ij
+
+gpp [fnutx, fnuty];
+
+gp aa=2*nuT*sa11;
+gp bb=2*nuT*sa12;
+gp cc=2*nuT*sa21;
+gp dd=2*nuT*sa22;
+
+
+
+//Derivative of Stress due to eddy-viscosity portion, i.e., div(2*nuT*S_ij)
+
+
+matrix DDXs,DDYs,Mus;
+   {
+	  varf masss(u,uh) = int2d(gh,qforder=qfo)( u*uh );
+	  varf DXs(u,uh)   = int2d(gh,qforder=qfo)( dx(u)*uh );
+	  varf DYs(u,uh)   = int2d(gh,qforder=qfo)( dy(u)*uh );
+	  DDXs = DXs(gu,gp);
+	  DDYs = DYs(gu,gp);
+	  Mus  = masss(gp,gp,solver=sparsesolver);
+   }
+
+
+
+gp dxaa,dybb,dxcc,dydd;
+		{
+			gu tempu1s;
+			gp tempu2s;
+			tempu1s = bb;    tempu2s[] = DDYs*tempu1s[]; dybb[]   = Mus^-1*tempu2s[];
+			tempu1s = aa;    tempu2s[] = DDXs*tempu1s[]; dxaa[]   = Mus^-1*tempu2s[];
+			tempu1s = dd;    tempu2s[] = DDYs*tempu1s[]; dydd[]   = Mus^-1*tempu2s[];
+			tempu1s = cc;    tempu2s[] = DDXs*tempu1s[]; dxcc[]   = Mus^-1*tempu2s[];
+		}
+
+
+
+
+[fnutx, fnuty]=[dxaa+dybb,dxcc+dydd];
+
+
+//Total forcing, i.e., sum of portion from div(2*nuT*S_ij) with the correction term
+
+[fx, fy]=[fcx+fnutx, fcy+fnuty];
+
+
+
+
+
+
+
+
+// We save the tecplot file
+int nbv = th.nv;
+int nbt = th.nt;
+{
+	ofstream file("./forcedns.dat");
+        file << "TITLE = "<<"SQUARE_CYLINDER_RE_22000"<<endl;
+	file << "VARIABLES = \"X\" ,  \"Y\" , \"fx\" , \"fy\"   " << endl;
+        file << "ZONE"<<"   "<<"N="<<th.nv<<","<<"E="<<th.nt<<","<<"F=FEPOINT,ET=TRIANGLE"<<endl;
+
+	for (int i=0; i<nbv; i++){
+		real xt=th(i).x;
+		real yt=th(i).y;
+		file << xt << " " << yt << " "  << fxdns(xt,yt)   << " " << fydns(xt,yt) << endl;
+	};
+
+	// Liste connectivite
+	for (int k=0; k<nbt; k++){
+		file << int(th[k][0])+1 << " " << int(th[k][1])+1 << " " << int(th[k][2])+1 << endl;
+	};
+};
+
+
+// We save the tecplot file
+int gnbv = gh.nv;
+int gnbt = gh.nt;
+
+
+{
+	ofstream file("./forceda.dat");
+        file << "TITLE = "<<"SQUARE_CYLINDER_RE_22000"<<endl;
+	file << "VARIABLES = \"X\" ,  \"Y\" , \"fx\" , \"fy\"   " << endl;
+        file << "ZONE"<<"   "<<"N="<<gh.nv<<","<<"E="<<gh.nt<<","<<"F=FEPOINT,ET=TRIANGLE"<<endl;
+
+	for (int i=0; i<gnbv; i++){
+		real xt=gh(i).x;
+		real yt=gh(i).y;
+		file << xt << " " << yt << " "  << fx(xt,yt)   << " " << fy(xt,yt) << endl;
+	};
+
+	// Liste connectivite
+	for (int k=0; k<gnbt; k++){
+		file << int(gh[k][0])+1 << " " << int(gh[k][1])+1 << " " << int(gh[k][2])+1 << endl;
+	};
+};

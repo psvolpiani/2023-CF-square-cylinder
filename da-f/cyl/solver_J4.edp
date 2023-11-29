@@ -1,0 +1,125 @@
+include "libff/common.h"
+
+cout << f11.ndof << endl;
+
+// numerical parameters
+int NSmaxiter   = 100;                   // maximum number of iteration for NS solver
+int NSiter;                             // number of Newton iteration for NS solver
+real NStoll     = 1.e-8;//5e-7//5.e-8;//0.2e-5;                // tollerance for NS solver
+int iterJ       = getARGV("-iterJ",1);  // optim. iteration
+
+{
+  ofstream fifi(fileoutput,append);
+  fifi << "New Iteration of the solver_J : " << iterJ << endl;
+  fifi << endl;
+}
+
+f221 [ur,vr,pr];
+{
+  int nummeshdns  = 31;
+  mesh thdns = readmesh("../../reference/results-julien/interpolated_solution/interpolateDNS/mesh_adapted.msh");
+  plot(thdns,wait=waitplt);
+  
+  fespace fuupdns(thdns,[P1b,P1b,P1]);
+  fuupdns [u0,v0,p0];
+  fespace fu(thdns,P1);
+  fespace f6u1p(thdns,[P1b,P1b,P1b,P1b,P1b,P1b, P1]);
+  f6u1p [ue,ve,uue,vve,wwe,uve,pe];
+  
+  // We load the fields in freefem format
+  {
+    ifstream file("../../reference/results-julien/interpolated_solution/interpolateDNS/reference-Ue-Ve-UUe-VVe-WWe-UVe-Pe.txt");
+    file >> ue[] ;
+  }
+  f2 us; us=(ue(x,y)+ue(x,-y))/2.;
+  f2 vs; vs=(ve(x,y)-ve(x,-y))/2.;
+  f1 ps; ps=(pe(x,y)+pe(x,-y))/2.;
+  [ur,vr,pr] = [us,vs,ps];
+}
+
+// load NS solver (requires spaces definition)
+include "libff/lib-ns4.idp"
+
+// Initialize assimilation solution (RANS)
+f2212 [u,v,p,nut];
+
+// Control variables
+f11 [fx,fy];
+
+if(iterJ==1){
+  ifstream file("../../baseline/results/structured/baseline-solution-Re-"+Re+".txt");
+  file >> u[];
+  fx[]  = 0.0;
+}
+else{
+  ifstream file("./results/solution-mesh.txt");
+  file >> u[];
+}
+
+include "libff/lib-J4.idp"
+
+{
+  {
+    ifstream file ("./results/field_param.txt");
+    for(int ii = 0; ii < f11.ndof; ii++){
+      file >> fx[][ii];
+    }
+  }
+  
+  // Cholesky decomposition changes of variables
+  varf mass([u,v],[uh,vh]) = int2d(th,qft=qf1pTlump)( u*uh + v*vh);
+  matrix MM = mass(f11,f11);
+  real[int] CCaux(f11.ndof),CC(f11.ndof);
+  CCaux = MM.diag;
+  CC    = sqrt(CCaux);
+  
+  fx[]   = fx[] ./ CC;
+}
+
+//plot(fx,wait=1,value=1);
+//plot(fy,wait=1,value=1);
+
+// compute NS solution
+NSiter = NS(u[],fx[],nu,NStoll,NSmaxiter);
+
+if(NSiter> 0){
+  // compute cost function
+  real     J;                         // cost function value
+  f2212 [dJdu,dJdv,dJdp,dJdnut];      // J gradient with respect to the flow (adjoint forcing)
+  J = getJ(u[],ur[],dJdu[],fx[]);
+  {
+    ofstream file("./results/J.txt");
+    file.precision(16);
+    file << J << endl;
+  }
+  {
+    ofstream fifi(fileoutput,append);
+    fifi << " J = " << J << endl;
+  }
+  {
+    ofstream file("./results/solution-mesh.txt");
+    file.precision(16);
+    file << u[] << endl;
+    file << fx[] << endl;
+    file << dJdu[] << endl;
+  }
+}
+
+//Optional modification
+else {
+  real J;
+  {
+    ifstream file("./results/J.txt");
+    file >> J ;
+  }	J=J*1.0;
+  {
+    ofstream file("./results/J.txt");
+    file.precision(16);
+    file << J << endl;
+  }
+}
+
+
+
+
+

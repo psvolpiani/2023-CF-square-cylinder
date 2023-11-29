@@ -1,0 +1,126 @@
+
+// Example to compute the error of the velocity field between the DNS and RANS-SA/DA
+// here: error of the data assimilated solution with forcing in momentum equations and error of the RANS-SA
+// Input: *.txt of DNS solution and *.txt of RANS solution
+// Output: *.dat of the velocity error field
+
+
+// Read mesh
+mesh th = readmesh("../../../reference/results-julien/interpolated_solution/interpolateDNS/mesh_adapted.msh");
+
+// Define spaces
+fespace f6u1p(th,[P1b,P1b,P1b,P1b,P1b,P1b, P1]);
+f6u1p [u,v,urms,vrms,wrms,uvt,p];
+
+// We load the fields in freefem format
+{
+	ifstream file("../../../reference/results-julien/interpolated_solution/interpolateDNS/reference-Ue-Ve-UUe-VVe-WWe-UVe-Pe.txt");
+	file >> u[] ;
+}
+
+
+////////////////////  error of the data assimilated solution with forcing in momentum equations
+
+{
+// Read mesh
+mesh gh = readmesh("../../../mesh/mesh.msh");
+
+// Define spaces
+fespace guupp(gh,[P1b,P1b,P1,P1]);
+fespace gpp(gh,[P1,P1]);
+fespace gp(gh,P1);
+guupp [ua,va,pa,nuta];
+gpp [fx, fy];
+gpp [fcx, fcy];
+guupp [dJdu,dJdv,dJdp,dJdnut];
+ 
+// We load the fields in freefem format
+{
+	ifstream file("../../solution_fields/DA/da-f/solution-mesh-iter0542.txt");
+	file >> ua[] ;
+	file >> fcx[];
+	file >> dJdu[];
+}
+
+// error
+gp error;
+error=((u-ua)*(u-ua)+(v-va)*(v-va))^0.5;
+
+// We save the tecplot file
+int nbv = th.nv;
+int nbt = th.nt;
+{
+	ofstream file("./error_field_f.dat");
+        file << "TITLE = "<<"SQUARE_CYLINDER_RE_22000_error"<<endl;
+	file << "VARIABLES = \"X\" ,  \"Y\" , \"error\"   " << endl;
+        file << "ZONE"<<"   "<<"N="<<th.nv<<","<<"E="<<th.nt<<","<<"F=FEPOINT,ET=TRIANGLE"<<endl;
+
+	for (int i=0; i<nbv; i++){
+		real xt=th(i).x;
+		real yt=th(i).y;
+		file << xt << " " << yt << " "  << error(xt,yt)   << endl;
+	};
+
+	// Liste connectivite
+	for (int k=0; k<nbt; k++){
+		file << int(th[k][0])+1 << " " << int(th[k][1])+1 << " " << int(th[k][2])+1 << endl;
+	};
+};
+
+
+};
+
+
+
+//////////////////// error of the RANS-SA
+
+{
+// Read mesh
+mesh gh = readmesh("../../../mesh/mesh.msh"); 
+
+// Define spaces
+fespace guupp(gh,[P1b,P1b,P1,P1]);
+guupp [urans,vrans,prans,nutb];
+fespace gp(gh,P1);
+
+// We load the fields in freefem format
+{
+	ifstream file("../../solution_fields/RANS-SA/baseline-solution-Re-22000.txt");
+	file >> urans[] ;
+}
+
+
+
+// error
+gp error;
+error=((u-urans)*(u-urans)+(v-vrans)*(v-vrans))^0.5;
+
+
+// We save the tecplot file
+int nbv = th.nv;
+int nbt = th.nt;
+{
+	ofstream file("./error_field_baseline.dat");
+        file << "TITLE = "<<"SQUARE_CYLINDER_RE_22000_error"<<endl;
+	file << "VARIABLES = \"X\" ,  \"Y\" , \"error\"   " << endl;
+        file << "ZONE"<<"   "<<"N="<<th.nv<<","<<"E="<<th.nt<<","<<"F=FEPOINT,ET=TRIANGLE"<<endl;
+
+	for (int i=0; i<nbv; i++){
+		real xt=th(i).x;
+		real yt=th(i).y;
+		file << xt << " " << yt << " "  << error(xt,yt)   << endl;
+	};
+
+	// Liste connectivite
+	for (int k=0; k<nbt; k++){
+		file << int(th[k][0])+1 << " " << int(th[k][1])+1 << " " << int(th[k][2])+1 << endl;
+	};
+};
+
+
+};
+
+
+
+
+

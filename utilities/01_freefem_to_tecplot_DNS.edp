@@ -1,0 +1,50 @@
+
+
+// Example to convert a FreeFEM solution file to tecplot format (DNS case)
+// Input: *.txt of DNS solution
+// Output: *.dat of DNS solution
+
+
+// Read mesh
+mesh th = readmesh("../reference/results-julien/interpolated_solution/interpolateDNS/mesh_adapted.msh");
+
+// Define spaces
+fespace f6u1p(th,[P1b,P1b,P1b,P1b,P1b,P1b, P1]);
+fespace fuup(th,[P1b,P1b,P1]);
+
+f6u1p [ue,ve,uue,vve,wwe,uve,pe];
+fuup [us,vs,ps];
+
+
+// We load the fields in freefem format
+	{
+		ifstream file("../reference/results-julien/interpolated_solution/interpolateDNS/reference-Ue-Ve-UUe-VVe-WWe-UVe-Pe.txt");
+		file >> ue[] ;
+		[us,vs,ps]=[ue,ve,pe];
+
+	}
+
+
+
+
+// We save the tecplot file
+int nbv = th.nv;
+int nbt = th.nt;
+{
+	ofstream file("./solution_fields/DNS/reference-solution-Re-22000.dat");
+    file << "TITLE = "<<"SQUARE_CYLINDER_RE_22000"<<endl;
+	file << "VARIABLES = \"X\" ,  \"Y\" , \"u\" , \"v\" , \"p\"  " << endl;
+    file << "ZONE"<<"   "<<"N="<<th.nv<<","<<"E="<<th.nt<<","<<"F=FEPOINT,ET=TRIANGLE"<<endl;
+
+	for (int i=0; i<nbv; i++){
+		real xt=th(i).x;
+		real yt=th(i).y;
+		file << xt << " " << yt << " "  << us(xt,yt)       << " " << vs(xt,yt)       << " " 
+						<< ps(xt,yt)    << " " << 0  << endl;
+	};
+
+	// Liste connectivite
+	for (int k=0; k<nbt; k++){
+		file << int(th[k][0])+1 << " " << int(th[k][1])+1 << " " << int(th[k][2])+1 << endl;
+	};
+};

@@ -1,0 +1,5 @@
+This step was done using PARAVIEW:
+
+Interpolate the dimensionless complete DNS solution 'nd_moy_DNS_cyl_22k_point.dat' (01_non_dimension_DNS.py) to the mesh created 'mesh_non_adapt.dat' (03_freefem_to_tecplot.edp) using paraview to do it.
+	
+The output was in format .txt and named './non_adapt/interpolatedDNS.txt'

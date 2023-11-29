@@ -1,0 +1,65 @@
+New Iteration of the solver_J : 1
+
+Navier-Stokes
+iter=  1 , resl2=  1.39955e-09 , resinf=  6.40641e-10
+  Newton converged in 1 iterations
+GetJ
+ J = 1.24241
+New gradient
+Adjoint Navier-Stokes
+GetdJdfx
+New Iteration of the solver_J : 2
+
+Navier-Stokes
+iter=  1 , resl2=  0.029445 , resinf=  0.00516583
+CFL=10
+iter=  2 , resl2=  31914.2 , resinf=  13213.5
+  Newton diverged
+New gradient
+Adjoint Navier-Stokes
+GetdJdfx
+New Iteration of the solver_J : 3
+
+Navier-Stokes
+iter=  1 , resl2=  0.00622227 , resinf=  0.00109164
+CFL=10
+iter=  2 , resl2=  513.253 , resinf=  124.365
+  Newton diverged
+New gradient
+Adjoint Navier-Stokes
+GetdJdfx
+New Iteration of the solver_J : 4
+
+Navier-Stokes
+iter=  1 , resl2=  0.00131455 , resinf=  0.000230624
+CFL=10
+iter=  2 , resl2=  19.1147 , resinf=  5.28182
+  Newton diverged
+New gradient
+Adjoint Navier-Stokes
+GetdJdfx
+New Iteration of the solver_J : 5
+
+Navier-Stokes
+iter=  1 , resl2=  0.000277235 , resinf=  4.86381e-05
+CFL=10
+iter=  2 , resl2=  0.836681 , resinf=  0.231185
+CFL=10
+iter=  3 , resl2=  0.208254 , resinf=  0.0594145
+CFL=10
+iter=  4 , resl2=  0.148165 , resinf=  0.0986126
+CFL=10
+iter=  5 , resl2=  9.07825 , resinf=  6.14536
+  Newton diverged
+New gradient
+Adjoint Navier-Stokes
+GetdJdfx
+New Iteration of the solver_J : 6
+
+Navier-Stokes
+iter=  1 , resl2=  5.78427e-05 , resinf=  1.01479e-05
+CFL=10
+iter=  2 , resl2=  0.0355804 , resinf=  0.009081
+CFL=10
+iter=  3 , resl2=  0.00839357 , resinf=  0.00236562
+CFL=10

@@ -1,0 +1,43 @@
+
+//                                                                            //
+// Cost function toolbox                                                      //
+//                                                                            //
+// Contents: - J = getJ(flow[],ref[],dJdu[]*)                                 //
+//                                                                            //
+// * indicates overwritten variables.                                         //
+//                                                                            //
+// Meshes th, thr and space f221, UrxUrxPr must be defined globally.          //
+//                                                                            //
+
+
+func real getJ(real[int] &flow,
+							 real[int] &ref,
+							 real[int] &grad,
+							 real[int] &control)
+{
+  {
+   ofstream fifi(fileoutput,append);
+   fifi << "GetJ" << endl;
+  }
+
+	// Unwrap inputs
+	f2212 [u ,v ,p ,nut];  u[]        = flow;
+	f221 [ur,vr,pr]; 	 	ur[]       = ref;
+
+	// Define mask
+	f2 mask;  mask = 1.0;
+
+	// compute cost function
+	real J = int2d(th,qforder=qfo)( 0.5 * mask * ( (u-ur)^2 + (v-vr)^2 ));
+
+  // compute gradient (measurements space)
+	f2212 [dJdum,dJdvm,dJdpm,dJdnutm]; 
+	
+	varf NSarhs([du1,du2,dp,dnut],[v1,v2,q,mut]) =  - int2d(th,qforder=qfo)(mask*(u-ur)*v1 + mask*(v-vr)*v2)
+             + on(6,du2=0.0)
+             + on(1,2,4,du1=0.0,du2=0.0,dnut=0.0);
+	dJdum[] =NSarhs(0,f2212,tgv=1.e30);
+
+	// output
+	grad=dJdum[]; return J;
+}

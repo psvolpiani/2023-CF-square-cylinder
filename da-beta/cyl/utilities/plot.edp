@@ -1,0 +1,220 @@
+include "libff/common.h"
+
+// Initialize assimilation solution (RANS)
+f2212 [u,v,p,nut];
+f2212 [dJdu,dJdv,a,b];
+f1 fx;
+
+f1 gradx;
+
+
+
+
+
+	ifstream file("../results/gradient-mesh-iter0001.txt");
+	for(int ii = 0; ii < f1.ndof; ii++){
+	file >> gradx[][ii];
+	}
+
+
+
+{
+// Cholesky decomposition changes of variables
+varf mass(u,uh) = int2d(th,qft=qf1pTlump)( u*uh);
+matrix MM = mass(f1,f1);
+real[int] CCaux(f1.ndof),CC(f1.ndof);
+CCaux = MM.diag;
+CC    = sqrt(CCaux);
+gradx[]   = gradx[] ./ CC;
+}
+
+
+real normgrad0  = int2d(th)( gradx^2  );
+normgrad0=normgrad0^0.5;
+
+
+
+
+
+
+
+
+for(int i = 1; i < 10; i++){
+
+	ifstream file("../results/gradient-mesh-iter000"+i+".txt");
+	for(int ii = 0; ii < f1.ndof; ii++){
+	file >> gradx[][ii];
+	}
+
+
+{
+// Cholesky decomposition changes of variables
+varf mass(u,uh) = int2d(th,qft=qf1pTlump)( u*uh);
+matrix MM = mass(f1,f1);
+real[int] CCaux(f1.ndof),CC(f1.ndof);
+CCaux = MM.diag;
+CC    = sqrt(CCaux);
+gradx[]   = gradx[] ./ CC;
+}
+
+
+
+real normgrad  = int2d(th)( gradx^2 );
+normgrad=normgrad^0.5;
+
+
+{
+		ofstream file("./gradnorm.txt", append);
+		file.precision(16);
+		file << normgrad/normgrad0 << endl;
+	}
+
+
+}
+
+
+
+
+
+
+
+
+
+
+
+for(int i = 10; i < 72; i++){
+
+	ifstream file("../results/gradient-mesh-iter00"+i+".txt");
+	for(int ii = 0; ii < f1.ndof; ii++){
+	file >> gradx[][ii];
+	}
+
+
+{
+// Cholesky decomposition changes of variables
+varf mass(u,uh) = int2d(th,qft=qf1pTlump)( u*uh);
+matrix MM = mass(f1,f1);
+real[int] CCaux(f1.ndof),CC(f1.ndof);
+CCaux = MM.diag;
+CC    = sqrt(CCaux);
+gradx[]   = gradx[] ./ CC;
+}
+
+
+
+real normgrad  = int2d(th)( gradx^2  );
+normgrad=normgrad^0.5;
+
+{
+		ofstream file("./gradnorm.txt", append);
+		file.precision(16);
+		file << normgrad/normgrad0 << endl;
+	}
+
+
+}
+
+
+
+
+
+for(int i = 100; i < 100; i++){
+
+	ifstream file("../results/gradient-mesh-iter0"+i+".txt");
+	for(int ii = 0; ii < f1.ndof; ii++){
+	file >> gradx[][ii];
+	}
+
+
+{
+// Cholesky decomposition changes of variables
+varf mass(u,uh) = int2d(th,qft=qf1pTlump)( u*uh);
+matrix MM = mass(f1,f1);
+real[int] CCaux(f1.ndof),CC(f1.ndof);
+CCaux = MM.diag;
+CC    = sqrt(CCaux);
+gradx[]   = gradx[] ./ CC;
+}
+
+
+
+real normgrad  = int2d(th)( gradx^2  );
+normgrad=normgrad^0.5;
+
+{
+		ofstream file("./gradnorm.txt", append);
+		file.precision(16);
+		file << normgrad/normgrad0 << endl;
+	}
+
+
+}
+
+
+
+
+
+
+
+
+
+
+//{
+	//ifstream file("../results/solution-mesh-iter0110.txt");
+	//file >> u[];
+	//file >> fx[];
+	//file >> dJdu[];
+//}
+
+
+
+//f22 [ur,vr];
+//{
+	//int nummeshdns  = 31;
+	//mesh thdns = readmesh("../../reference/NASA-DNS/interpolated_solution/mesh/mesh_adapted.msh");
+	//plot(thdns,wait=waitplt);
+
+	//fespace fuupdns(thdns,[P1b,P1b,P1]);
+	//fuupdns [u0,v0,p0];
+
+
+	//fespace fu(thdns,P1);
+	//fespace f6u1p(thdns,[P1b,P1b,P1b,P1b,P1b,P1b]);
+	//f6u1p [ue,ve,uue,vve,wwe,uve];
+
+	// We load the fields in freefem format
+	//{
+		//ifstream file("../../reference/NASA-DNS/interpolated_solution/interpolateDNS/reference-Ue-Ve-UUe-VVe-WWe-UVe.txt");
+		//file >> ue[] ;
+	//}
+        //f2 us; us=ue;
+        //f2 vs; vs=ve;
+	//[ur,vr] = [us,vs];
+//}
+
+
+
+//real J = int2d(th)( 0.5 * ( (u-ur)^2 + (v-vr)^2 ));
+//cout<<J<<endl;
+
+//f2 diff=u-ur;
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+plot(gradx,value=1,wait=1);
+//plot(ur,value=1,wait=1);
+//plot(u,value=1,wait=1);
+

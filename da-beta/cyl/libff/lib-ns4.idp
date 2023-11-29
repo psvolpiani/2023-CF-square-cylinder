@@ -1,0 +1,92 @@
+// ===========================
+// RANS and its adjoint solver
+// ===========================
+
+func int NS(real[int] &flow, real[int] &fx, real nu,
+            real toll, int maxiter
+            )
+{
+  // Unwrap inputs
+  f2212 [ub   ,vb    ,pb   ,nutb   ]; ub[]     = flow;
+  f1 ffx; ffx[]     = fx;
+  
+  {
+    ofstream fifi(fileoutput,append);
+    fifi << "Navier-Stokes" << endl;
+  }
+  include "libff/varf1.idp"
+  include "libff/varf-direct.idp"
+  
+  // Newton method
+  real err,errorratio;
+  real Res0inf,Resninf,Res0L2,ResnL2;
+  
+  for(int iter=1;iter<maxiter+1;iter++)
+  {
+    include "libff/varf2.idp"
+
+    // Construction of right-hand side
+    
+    f2212 [rhsu,rhsv,rhsp,rhsnut];
+    rhsu[] = vrhs(0,f2212,tgv=1);
+    
+    ResnL2 = rhsu[].l2; Resninf = rhsu[].linfty;
+    if(iter==1){ Res0L2 = ResnL2; Res0inf = Resninf; }
+    
+    // Compute norm of residual
+    
+    errorratio = max(ResnL2/Res0L2,Resninf/Res0inf);
+    err = max(ResnL2,Resninf);
+    
+    {
+      ofstream fifi(fileoutput,append);
+      fifi << "iter=  " << iter << " , resl2=  " << ResnL2 << " , resinf=  " << Resninf << endl;
+    }
+    
+    // - exit conditions
+    // -- converged:
+    if((ResnL2 < toll)){
+      {
+        ofstream fifi(fileoutput,append);
+        fifi << "  Newton converged in "+iter+" iterations" << endl;
+      }
+      flow = ub[];
+      return iter;
+    }
+    // -- diverged:
+    if((ResnL2 >= 1.) & (iter>1)){
+      {
+        ofstream fifi(fileoutput,append);
+        fifi << "  Newton diverged" << endl;
+      }
+      return -iter;
+    }
+    
+    // Compute Local time step dtloc = CFL*hTriangle/||u||
+    
+    real CFLmin       = 10.;
+    real CFLmax       = 1.e+20;
+    real CFL = max(CFLmin ,min(CFLmin/errorratio,CFLmax));
+    //real CFL = min(CFLmin/errorratio,CFLmax);
+    f0 tloc = min(hTriangle/(sqrt(ub^2 + vb^2)),0.5*hTriangle*hTriangle/nu);
+
+    {
+      ofstream fifi(fileoutput,append);
+      fifi << "CFL=" << CFL << endl;
+    }
+    dtlocal = CFL*tloc;
+    
+    // Construction and resolution of matrix
+    
+    matrix A = vA(f2212,f2212,tgv=-1,solver=GMRES);
+    set(A,solver=sparsesolver);
+    
+    f2212 [u,v,p,nut];
+    u[] = A^-1*rhsu[];
+    
+    ub[] += u[];
+    
+  }
+  return 0;
+}
+
